@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% block title %}Privacy Policy - SafeIMEI{% endblock %}
+
+{% block content %}
+{% include 'partials/navbar_public.html' %}
+<div class="page pt-16 bg-white min-h-screen">
+    <main class="max-w-4xl mx-auto py-16 px-4 sm:px-6 lg:px-8">
+        <div class="prose max-w-none">
+            <h1>Privacy Policy</h1>
+            <p><strong>Last updated: September 11, 2025</strong></p>
+            <p>SafeIMEI ("we," "us," or "our") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our platform. Please read this privacy policy carefully. If you do not agree with the terms of this privacy policy, please do not access the site.</p>
+
+            <h3>Information We Collect</h3>
+            <p>We collect information in two primary ways:</p>
+            <ul>
+                <li><strong>Public Users (IMEI Check):</strong> We do not collect any personally identifiable information (PII) from users who perform an IMEI check. We may temporarily log IP addresses for the sole purpose of preventing system abuse (e.g., through rate limiting). These logs are not linked to any personal data and are deleted regularly.</li>
+                <li><strong>Official Theft Reports:</strong> When a victim files a report at a police station, the Nigerian Police Force collects information necessary for the report. This includes PII such as the victim's name and contact details, and device information like the IMEI. SafeIMEI acts as a secure data processor for this information.</li>
+            </ul>
+
+            <h3>How We Use Your Information</h3>
+            <p>The information collected is used for the following purposes:</p>
+            <ul>
+                <li>To operate and maintain the national database of stolen devices.</li>
+                <li>To provide the public IMEI verification service.</li>
+                <li>To allow authorized law enforcement to manage and track stolen device reports.</li>
+                <li>To protect our services from fraud and abuse.</li>
+            </ul>
+
+            <h3>Data Security and Sharing</h3>
+            <p>Protecting your information is our highest priority.</p>
+            <ul>
+                <li><strong>No Public Exposure of PII:</strong> A victim's personal information (name, phone number, address, etc.) is NEVER displayed on the public website or shared with any public user.</li>
+                <li><strong>Strict Access Controls:</strong> Access to sensitive personal information is strictly limited to authorized police personnel and vetted SafeIMEI system administrators for official purposes only.</li>
+                <li><strong>Data Encryption:</strong> We implement industry-standard security measures, including data encryption at rest and in transit, to protect all sensitive information from unauthorized access.</li>
+                <li><strong>No Third-Party Sharing:</strong> We do not sell, trade, or otherwise share your personal information with third-party marketers or advertisers.</li>
+            </ul>
+
+            <h3>Data Retention</h3>
+            <p>We retain report information as long as it is necessary to provide our services and as required by our partnership with law enforcement. When a device is marked as "Recovered," the public "stolen" flag is removed, but the official report may be retained for law enforcement records according to their policies.</p>
+
+            <h3>Changes to This Privacy Policy</h3>
+            <p>We may update this Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page and updating the "Last updated" date. You are advised to review this Privacy Policy periodically for any changes.</p>
+        </div>
+    </main>
+</div>
+{% include 'partials/footer_public.html' %}
+{% endblock %}

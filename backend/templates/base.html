@@ -8,13 +8,44 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
     <style>
-        body { font-family: 'Inter', sans-serif; }
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Class to hide pages that are not active */
+        .page.hidden {
+            display: none;
+        }
+        /* Simple prose styling for content pages */
         .prose h1 { font-size: 2.25rem; font-weight: 800; margin-bottom: 1em; }
         .prose h3 { font-size: 1.25rem; font-weight: 700; margin-top: 2em; margin-bottom: 1em; }
         .prose p { margin-bottom: 1.25em; line-height: 1.75; }
         .prose ul { list-style-type: disc; margin-left: 1.5em; margin-bottom: 1.25em;}
         .prose li { margin-bottom: 0.5em; }
+
+        /* Styles for the FAQ accordion */
+        .faq-answer {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-in-out;
+        }
+        .faq-answer.open {
+            max-height: 300px; /* Adjust as needed */
+        }
+        
+        /* Styles for form validation */
+        .input-error {
+            border-color: #ef4444; /* red-500 */
+        }
+        .input-success {
+            border-color: #22c55e; /* green-500 */
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            transition: opacity 0.3s ease;
+        }
     </style>
     {% block extra_css %}{% endblock %}
 </head>

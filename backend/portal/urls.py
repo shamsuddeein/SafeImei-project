@@ -17,4 +17,9 @@ urlpatterns = [
     path('reports/', views.view_reports_view, name='view_reports'),
     # Updated URL for multi-step form
     path('reports/create/<int:step>/', views.create_report_view, name='create_report'),
+
+    path('faq/', views.faq, name='faq'),
+    path('contact/', views.contact, name='contact'),
+    path('about/', views.about, name='about'),
+    path('privacy/', views.privacy, name='privacy'),
 ]

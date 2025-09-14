@@ -1,5 +1,6 @@
 # portal/views.py
 
+from django.utils import timezone
 import random
 import datetime
 from django.shortcuts import render, redirect
@@ -73,9 +74,45 @@ def officer_logout_view(request):
     logout(request)
     return redirect('home')
 
+
 @login_required
 def dashboard_view(request):
-    return render(request, 'dashboard.html')
+    # Get the current officer's station to filter reports
+    officer_station = request.user.officerprofile.station
+
+    # 1. Calculate "Reports This Month" for the specific station
+    now = timezone.now()
+    reports_this_month_count = DeviceReport.objects.filter(
+        station=officer_station,
+        created_at__year=now.year,
+        created_at__month=now.month
+    ).count()
+
+    # 2. Calculate "Pending Admin Review" for the specific station
+    # (Assuming a "Pending" status exists in your DeviceReport model's StatusChoices)
+    pending_review_count = DeviceReport.objects.filter(
+        station=officer_station,
+        status=DeviceReport.StatusChoices.PENDING # Adjust if your status is named differently
+    ).count()
+
+    # 3. Calculate "Recently Recovered" for the specific station
+    # (Assuming a "Recovered" status exists)
+    recently_recovered_count = DeviceReport.objects.filter(
+        station=officer_station,
+        status=DeviceReport.StatusChoices.RECOVERED
+    ).count()
+
+    # Create the context dictionary to pass the live data to the template
+    context = {
+        'reports_this_month_count': reports_this_month_count,
+        'pending_review_count': pending_review_count,
+        'recently_recovered_count': recently_recovered_count,
+    }
+
+    # Pass the context to the template
+    return render(request, 'dashboard.html', context)
+
+
 
 @login_required
 def view_reports_view(request):
@@ -139,3 +176,16 @@ def create_report_view(request, step):
         'report_data': request.session.get('report_data')
     }
     return render(request, 'create_report.html', context)
+
+def faq(request):
+    return render(request, 'faq.html')
+
+def contact(request):
+    return render(request, 'contact.html')
+
+def about(request):
+    return render(request, 'about.html')
+
+def privacy(request):
+    return render(request, 'privacy.html')
+
