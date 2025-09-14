@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SafeIMEI - Official IMEI Verification</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts for a clean, modern look -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Class to hide pages that are not active */
+        .page.hidden {
+            display: none;
+        }
+        /* Simple prose styling for content pages */
+        .prose h1 { font-size: 2.25rem; font-weight: 800; margin-bottom: 1em; }
+        .prose h3 { font-size: 1.25rem; font-weight: 700; margin-top: 2em; margin-bottom: 1em; }
+        .prose p { margin-bottom: 1.25em; line-height: 1.75; }
+        .prose ul { list-style-type: disc; margin-left: 1.5em; margin-bottom: 1.25em;}
+        .prose li { margin-bottom: 0.5em; }
+
+        /* Styles for the FAQ accordion */
+        .faq-answer {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-in-out;
+        }
+        .faq-answer.open {
+            max-height: 300px; /* Adjust as needed */
+        }
+        
+        /* Styles for form validation */
+        .input-error {
+            border-color: #ef4444; /* red-500 */
+        }
+        .input-success {
+            border-color: #22c55e; /* green-500 */
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            transition: opacity 0.3s ease;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+
+    <!-- Container for all pages -->
+    <div id="app-container">
+        <!-- All page content will be dynamically injected here -->
+    </div>
+    
+    <!-- Global Success Modal -->
+    <div id="success-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full modal-overlay z-50">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div class="mt-3 text-center">
+                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100">
+                    <svg class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                </div>
+                <h3 id="modal-title" class="text-lg leading-6 font-medium text-gray-900 mt-2">Success!</h3>
+                <div class="mt-2 px-7 py-3">
+                    <p id="modal-message" class="text-sm text-gray-500">Your action was completed successfully.</p>
+                </div>
+                <div class="items-center px-4 py-3">
+                    <button id="modal-close-button" class="px-4 py-2 bg-green-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-green-600">
+                        OK
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        // --- STATE MANAGEMENT (Simulated) ---
+        const appState = {
+            currentPage: 'home',
+            isLoggedIn: false,
+            reportData: {},
+            createReportStep: 1,
+            stationReports: [ // Mock data for the "View Reports" page
+                { id: 'RPT001', imei: '123456789012345', brand: 'Samsung', model: 'Galaxy S22', date: '2025-09-10', status: 'Stolen' },
+                { id: 'RPT002', imei: '987654321098765', brand: 'Apple', model: 'iPhone 15 Pro', date: '2025-09-08', status: 'Stolen' },
+                { id: 'RPT003', imei: '555566667777888', brand: 'Tecno', model: 'Camon 20', date: '2025-09-05', status: 'Recovered' },
+                { id: 'RPT004', imei: '112233445566778', brand: 'Infinix', model: 'Note 30', date: '2025-09-02', status: 'Stolen' },
+            ]
+        };
+
+        // --- ICONS (SVG Strings) ---
+        const ShieldCheckIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>`;
+        const MenuIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16m-7 6h7" /></svg>`;
+        const XIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>`;
+        const ChevronDownIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" /></svg>`;
+
+
+        // --- TEMPLATES (HTML Strings for each page) ---
+
+        const templates = {
+            navbar: `
+                <nav class="bg-white/80 backdrop-blur-md shadow-sm fixed w-full z-20">
+                    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                        <div class="flex items-center justify-between h-16">
+                            <div class="flex items-center">
+                                <button onclick="navigateTo('home')" class="flex-shrink-0 flex items-center gap-2 text-xl font-bold text-blue-600">
+                                    ${ShieldCheckIcon} <span>SafeIMEI</span>
+                                </button>
+                            </div>
+                            <div class="hidden md:block">
+                                <div class="ml-10 flex items-baseline space-x-4">
+                                    <button onclick="navigateTo('home')" class="text-gray-600 hover:bg-gray-100 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Home</button>
+                                    <button onclick="navigateTo('about')" class="text-gray-600 hover:bg-gray-100 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">About</button>
+                                    <button onclick="navigateTo('faq')" class="text-gray-600 hover:bg-gray-100 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">FAQ</button>
+                                    <button onclick="navigateTo('contact')" class="text-gray-600 hover:bg-gray-100 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Contact</button>
+                                    <button onclick="navigateTo('privacy')" class="text-gray-600 hover:bg-gray-100 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Privacy</button>
+                                    <button onclick="navigateTo('login')" class="ml-4 bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition-transform transform hover:scale-105">Officer Portal</button>
+                                </div>
+                            </div>
+                            <div class="-mr-2 flex md:hidden">
+                                <button id="mobile-menu-button" class="bg-gray-100 inline-flex items-center justify-center p-2 rounded-md text-gray-500 hover:text-gray-900 hover:bg-gray-200">
+                                    ${MenuIcon}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="mobile-menu" class="md:hidden hidden">
+                        <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                            <button onclick="navigateTo('home')" class="text-gray-600 hover:bg-gray-100 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium w-full text-left">Home</button>
+                            <button onclick="navigateTo('about')" class="text-gray-600 hover:bg-gray-100 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium w-full text-left">About</button>
+                            <button onclick="navigateTo('faq')" class="text-gray-600 hover:bg-gray-100 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium w-full text-left">FAQ</button>
+                            <button onclick="navigateTo('contact')" class="text-gray-600 hover:bg-gray-100 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium w-full text-left">Contact</button>
+                            <button onclick="navigateTo('privacy')" class="text-gray-600 hover:bg-gray-100 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium w-full text-left">Privacy</button>
+                            <button onclick="navigateTo('login')" class="bg-blue-600 text-white mt-2 block px-3 py-2 rounded-md text-base font-medium w-full text-left hover:bg-blue-700">Officer Portal</button>
+                        </div>
+                    </div>
+                </nav>
+            `,
+            footer: `
+                <footer class="bg-white border-t">
+                    <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+                        <div class="md:flex md:items-center md:justify-between">
+                            <div class="flex justify-center space-x-6 md:order-2">
+                                <button onclick="navigateTo('contact')" class="text-gray-400 hover:text-gray-500">Contact Us</button>
+                                <span class="text-gray-300">|</span>
+                                <button onclick="navigateTo('privacy')" class="text-gray-400 hover:text-gray-500">Privacy Policy</button>
+                                <span class="text-gray-300">|</span>
+                                <button onclick="navigateTo('faq')" class="text-gray-400 hover:text-gray-500">FAQ</button>
+                            </div>
+                            <div class="mt-8 md:mt-0 md:order-1">
+                                <p class="text-center text-base text-gray-400">&copy; 2025 SafeIMEI Nigeria. All rights reserved.</p>
+                            </div>
+                        </div>
+                    </div>
+                </footer>
+            `,
+            home: `
+                <div class="page pt-16">
+                    <header class="bg-white">
+                        <div class="max-w-7xl mx-auto py-20 px-4 sm:px-6 lg:px-8 text-center">
+                            <h1 class="text-4xl font-extrabold text-gray-900 sm:text-5xl md:text-6xl">Buy Used Phones with Confidence.</h1>
+                            <p class="mt-4 max-w-2xl mx-auto text-xl text-gray-500">Instantly check if a phone has been reported stolen with Nigeria's official IMEI database.</p>
+                            <div class="mt-10 max-w-xl mx-auto">
+                                <form id="imei-check-form" class="sm:flex sm:gap-2">
+                                    <input id="imei-input" type="text" maxlength="15" placeholder="Enter 15-digit IMEI number" class="w-full px-5 py-4 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-lg" required />
+                                    <button type="submit" class="mt-3 w-full sm:mt-0 sm:w-auto sm:flex-shrink-0 inline-flex items-center justify-center px-6 py-4 border border-transparent text-lg font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700">Check IMEI</button>
+                                </form>
+                                <div id="imei-result" class="mt-6"></div>
+                            </div>
+                        </div>
+                    </header>
+                    <section class="bg-gray-50 py-20">
+                        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                            <div class="text-center">
+                                <h2 class="text-base text-blue-600 font-semibold tracking-wide uppercase">How It Works</h2>
+                                <p class="mt-2 text-3xl font-extrabold text-gray-900 tracking-tight sm:text-4xl">A Simple Process for Peace of Mind</p>
+                            </div>
+                            <div class="mt-12 grid gap-10 md:grid-cols-3">
+                                <div class="text-center p-6 bg-white rounded-lg shadow-md"><div class="text-4xl mb-4">1.</div><h3 class="text-xl font-bold">Report a Theft</h3><p class="mt-2 text-gray-500">Victims report their stolen device at an authorized police station.</p></div>
+                                <div class="text-center p-6 bg-white rounded-lg shadow-md"><div class="text-4xl mb-4">2.</div><h3 class="text-xl font-bold">We Verify & Log</h3><p class="mt-2 text-gray-500">Police verify the report and add the IMEI to our secure national database.</p></div>
+                                <div class="text-center p-6 bg-white rounded-lg shadow-md"><div class="text-4xl mb-4">3.</div><h3 class="text-xl font-bold">You Check Before Buying</h3><p class="mt-2 text-gray-500">Enter the phone's IMEI on our site to see its status instantly.</p></div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            `,
+            simplePageLayout: (content) => `
+                <div class="page pt-16 bg-white min-h-screen">
+                    <main class="max-w-4xl mx-auto py-16 px-4 sm:px-6 lg:px-8">
+                        <div class="prose max-w-none">
+                            ${content}
+                        </div>
+                    </main>
+                </div>
+            `,
+             login: `
+                <div class="page min-h-screen bg-gray-100 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+                    <div class="sm:mx-auto sm:w-full sm:max-w-md"><h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">Officer Portal Login</h2></div>
+                    <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+                        <div class="bg-white py-8 px-4 shadow-lg sm:rounded-lg sm:px-10">
+                            <form id="login-form" class="space-y-6">
+                                <div><label for="stationId" class="block text-sm font-medium text-gray-700">Station ID</label><div class="mt-1"><input id="stationId" name="stationId" type="text" required class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"></div></div>
+                                <div><label for="password" class="block text-sm font-medium text-gray-700">Password</label><div class="mt-1"><input id="password" name="password" type="password" required class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"></div></div>
+                                <div id="login-message" class="text-sm text-red-600"></div>
+                                <div><button type="submit" class="w-full flex justify-center py-2 px-4 border rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">Login</button></div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            `,
+            auth: `
+                 <div class="page min-h-screen bg-gray-100 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+                    <div class="sm:mx-auto sm:w-full sm:max-w-md"><h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">Two-Factor Authentication</h2><p class="mt-2 text-center text-sm text-gray-600">Enter the 6-digit code.</p></div>
+                    <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+                        <div class="bg-white py-8 px-4 shadow-lg sm:rounded-lg sm:px-10">
+                            <form id="auth-form">
+                                <div class="flex justify-center gap-2 md:gap-4 mb-6">
+                                    ${[...Array(6)].map((_, i) => `<input key="${i}" type="text" maxlength="1" class="otp-input w-12 h-14 md:w-14 md:h-16 text-center text-2xl font-semibold border border-gray-300 rounded-lg" required />`).join('')}
+                                </div>
+                                <button type="submit" class="w-full flex justify-center py-2 px-4 border rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">Verify</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            `,
+            officerPortalLayout: (content) => `
+                <div class="page min-h-screen bg-gray-100">
+                    <nav class="bg-white border-b border-gray-200">
+                        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                            <div class="flex justify-between h-16">
+                                <div class="flex"><div class="flex-shrink-0 flex items-center gap-2 text-xl font-bold text-blue-600">${ShieldCheckIcon}<span>SafeIMEI Officer Portal</span></div></div>
+                                <div class="flex items-center">
+                                    <button onclick="navigateTo('dashboard')" class="hidden sm:block text-sm font-medium text-gray-500 hover:text-gray-700 mr-4">Dashboard</button>
+                                    <button onclick="handleLogout()" class="text-sm font-medium text-red-500 hover:text-red-700">Logout</button>
+                                </div>
+                            </div>
+                        </div>
+                    </nav>
+                    <main><div class="py-6"><div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">${content}</div></div></main>
+                </div>
+            `,
+            dashboard: `
+                <div>
+                    <h1 class="text-2xl font-semibold text-gray-900 mb-6">Officer Dashboard</h1>
+                    <!-- Stats Section -->
+                    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 mb-8">
+                        <div class="bg-white overflow-hidden shadow rounded-lg">
+                            <div class="p-5"><dl><dt class="text-sm font-medium text-gray-500 truncate">Reports This Month</dt><dd class="mt-1 text-3xl font-semibold text-gray-900">12</dd></dl></div>
+                        </div>
+                        <div class="bg-white overflow-hidden shadow rounded-lg">
+                             <div class="p-5"><dl><dt class="text-sm font-medium text-gray-500 truncate">Pending Admin Review</dt><dd class="mt-1 text-3xl font-semibold text-gray-900">3</dd></dl></div>
+                        </div>
+                        <div class="bg-white overflow-hidden shadow rounded-lg">
+                             <div class="p-5"><dl><dt class="text-sm font-medium text-gray-500 truncate">Recently Recovered</dt><dd class="mt-1 text-3xl font-semibold text-gray-900">1</dd></dl></div>
+                        </div>
+                    </div>
+                     <!-- Actions Section -->
+                    <div class="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2">
+                        <button onclick="navigateTo('createReport')" class="p-8 bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow text-center">
+                            <h2 class="text-xl font-bold text-gray-800">Create New Report</h2>
+                            <p class="text-gray-500 mt-2">File a new report for a stolen device.</p>
+                        </button>
+                        <button onclick="navigateTo('viewReports')" class="p-8 bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow text-center">
+                            <h2 class="text-xl font-bold text-gray-800">View Station Reports</h2>
+                            <p class="text-gray-500 mt-2">Review and manage reports filed by your station.</p>
+                        </button>
+                    </div>
+                </div>
+            `,
+            createReport: `
+                <div>
+                    <h1 id="report-title" class="text-2xl font-semibold text-gray-900 mb-2">Create New Report</h1>
+                    <h2 id="report-subtitle" class="text-lg text-gray-600 mb-6"></h2>
+                    <div class="bg-white p-8 rounded-lg shadow-lg">
+                        <div id="progress-indicator" class="mb-8"></div>
+                        <div id="report-step-container"></div>
+                    </div>
+                </div>
+            `,
+            viewReports: `
+                <div>
+                    <div class="mb-5">
+                        <button onclick="navigateTo('dashboard')" class="inline-flex items-center text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+                            </svg>
+                            Back to Dashboard
+                        </button>
+                    </div>
+                    <div class="sm:flex sm:items-center sm:justify-between">
+                        <h1 class="text-2xl font-semibold text-gray-900">Station Reports</h1>
+                        <div class="mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
+                            <input type="search" id="report-search" placeholder="Search by IMEI..." class="w-full sm:w-auto px-3 py-2 border border-gray-300 rounded-md shadow-sm">
+                        </div>
+                    </div>
+                    <div class="mt-8 flex flex-col">
+                        <div class="-my-2 -mx-4 overflow-x-auto sm:-mx-6 lg:-mx-8">
+                            <div class="inline-block min-w-full py-2 align-middle md:px-6 lg:px-8">
+                                <div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
+                                    <table class="min-w-full divide-y divide-gray-300">
+                                        <thead class="bg-gray-50">
+                                            <tr>
+                                                <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">IMEI</th>
+                                                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Device</th>
+                                                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Date Reported</th>
+                                                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="reports-table-body" class="divide-y divide-gray-200 bg-white">
+                                            <!-- Rows will be injected here -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `,
+        };
+        
+        const aboutContent = `
+            <h1>Our Mission: A Safer Second-Hand Market for All</h1>
+            <p>SafeIMEI was born from a simple yet powerful mission: to make the second-hand mobile phone market in Nigeria safer for everyone. We recognized the pervasive problem of phone theft and the subsequent resale of these stolen devices, which traps unsuspecting buyers and perpetuates a cycle of crime that affects families and communities across the nation.</p>
+            <h3>The Problem We Solve</h3>
+            <p>Every year, countless Nigerians fall victim to phone theft. Beyond the financial loss, this experience brings a sense of violation and helplessness. For too long, there has been no effective, centralized system to prevent these stolen devices from simply re-entering the market. Buyers, acting in good faith, have been left with no way to verify the legitimacy of a device before purchase, putting them at risk of losing their money and unintentionally supporting criminal activity.</p>
+            <h3>Our Solution</h3>
+            <p>Our solution is a robust, centralized platform, developed in close partnership with Nigerian law enforcement agencies. We provide a secure, dedicated portal for police officers to log verified reports of stolen phones. This creates a trusted, real-time national database that serves as the single source of truth for device status.</p>
+            <p>For the public, we offer a free, simple, and instant IMEI verification tool. Before you buy a used phone—whether from a street vendor, an online marketplace, or a friend—you can perform a quick check to ensure it hasn't been reported stolen. This simple action provides the confidence and peace of mind you deserve in your purchase.</p>
+            <h3>Our Vision for the Future</h3>
+            <p>We are committed to disrupting the market for stolen electronics, protecting consumers, and contributing to a safer community for all Nigerians. By making it difficult to resell stolen phones, we aim to reduce the incentive for theft in the first place. We envision a future where every buyer is empowered, every transaction is transparent, and every citizen feels more secure.</p>
+        `;
+
+        const faqContent = `
+            <h1>Frequently Asked Questions</h1>
+            <div id="faq-accordion" class="space-y-4 mt-8">
+                <div class="faq-item">
+                    <button class="faq-question w-full flex justify-between items-center text-left p-4 bg-white border rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none">
+                        <span class="font-semibold text-gray-800">What is an IMEI number and how do I find it?</span>
+                        ${ChevronDownIcon}
+                    </button>
+                    <div class="faq-answer overflow-hidden">
+                        <div class="p-4 bg-gray-50 border-t">
+                            <p>The IMEI (International Mobile Equipment Identity) is a unique 15-digit number that identifies your specific mobile device. It's like a fingerprint for your phone. The easiest way to find it is by dialing <strong>*#06#</strong> on your phone's keypad. You can also find it in your phone's settings (usually under "About Phone" -> "Status") or printed on the original box.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <button class="faq-question w-full flex justify-between items-center text-left p-4 bg-white border rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none">
+                        <span class="font-semibold text-gray-800">Can I report my stolen phone directly on this website?</span>
+                        ${ChevronDownIcon}
+                    </button>
+                    <div class="faq-answer overflow-hidden">
+                         <div class="p-4 bg-gray-50 border-t">
+                            <p>No. To ensure the integrity and accuracy of our database, all reports must be filed in person at an authorized Nigerian Police station. This allows officers to verify proof of ownership and collect an official statement, which prevents fraudulent reports. We act as the central database for these verified police reports.</p>
+                        </div>
+                    </div>
+                </div>
+                 <div class="faq-item">
+                    <button class="faq-question w-full flex justify-between items-center text-left p-4 bg-white border rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none">
+                        <span class="font-semibold text-gray-800">Is there a fee to report a stolen phone?</span>
+                        ${ChevronDownIcon}
+                    </button>
+                    <div class="faq-answer overflow-hidden">
+                         <div class="p-4 bg-gray-50 border-t">
+                            <p>Yes, there is a small administrative fee payable at the police station when you file an official report. This fee helps cover the costs of running and maintaining this secure national platform, ensuring it remains a reliable and long-term resource. The public IMEI check service, however, is always free.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <button class="faq-question w-full flex justify-between items-center text-left p-4 bg-white border rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none">
+                        <span class="font-semibold text-gray-800">What should I do if a phone I'm about to buy is listed as stolen?</span>
+                        ${ChevronDownIcon}
+                    </button>
+                    <div class="faq-answer overflow-hidden">
+                         <div class="p-4 bg-gray-50 border-t">
+                            <p>Do not proceed with the purchase. We advise you to thank the seller for their time and walk away. You can optionally and discreetly inform the seller that the device is flagged in the national database. For your own safety, do not attempt to confront the seller or confiscate the device yourself. You can report the encounter to the nearest police station if you feel it is safe to do so.</p>
+                        </div>
+                    </div>
+                </div>
+                 <div class="faq-item">
+                    <button class="faq-question w-full flex justify-between items-center text-left p-4 bg-white border rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none">
+                        <span class="font-semibold text-gray-800">What happens if my phone is recovered?</span>
+                        ${ChevronDownIcon}
+                    </button>
+                    <div class="faq-answer overflow-hidden">
+                         <div class="p-4 bg-gray-50 border-t">
+                            <p>If your phone is recovered, you should return to the police station where you filed the initial report. They can update the status of your device in our system to "Recovered." This will remove the "stolen" flag from your IMEI, allowing the device to be used or sold legally in the future.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        const privacyContent = `
+            <h1>Privacy Policy</h1>
+            <p><strong>Last updated: September 11, 2025</strong></p>
+            <p>SafeIMEI ("we," "us," or "our") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our platform. Please read this privacy policy carefully. If you do not agree with the terms of this privacy policy, please do not access the site.</p>
+            
+            <h3>Information We Collect</h3>
+            <p>We collect information in two primary ways:</p>
+            <ul>
+                <li><strong>Public Users (IMEI Check):</strong> We do not collect any personally identifiable information (PII) from users who perform an IMEI check. We may temporarily log IP addresses for the sole purpose of preventing system abuse (e.g., through rate limiting). These logs are not linked to any personal data and are deleted regularly.</li>
+                <li><strong>Official Theft Reports:</strong> When a victim files a report at a police station, the Nigerian Police Force collects information necessary for the report. This includes PII such as the victim's name and contact details, and device information like the IMEI. SafeIMEI acts as a secure data processor for this information.</li>
+            </ul>
+
+            <h3>How We Use Your Information</h3>
+            <p>The information collected is used for the following purposes:</p>
+            <ul>
+                <li>To operate and maintain the national database of stolen devices.</li>
+                <li>To provide the public IMEI verification service.</li>
+                <li>To allow authorized law enforcement to manage and track stolen device reports.</li>
+                <li>To protect our services from fraud and abuse.</li>
+            </ul>
+
+            <h3>Data Security and Sharing</h3>
+            <p>Protecting your information is our highest priority.</p>
+            <ul>
+                <li><strong>No Public Exposure of PII:</strong> A victim's personal information (name, phone number, address, etc.) is NEVER displayed on the public website or shared with any public user.</li>
+                <li><strong>Strict Access Controls:</strong> Access to sensitive personal information is strictly limited to authorized police personnel and vetted SafeIMEI system administrators for official purposes only.</li>
+                <li><strong>Data Encryption:</strong> We implement industry-standard security measures, including data encryption at rest and in transit, to protect all sensitive information from unauthorized access.</li>
+                <li><strong>No Third-Party Sharing:</strong> We do not sell, trade, or otherwise share your personal information with third-party marketers or advertisers.</li>
+            </ul>
+
+            <h3>Data Retention</h3>
+            <p>We retain report information as long as it is necessary to provide our services and as required by our partnership with law enforcement. When a device is marked as "Recovered," the public "stolen" flag is removed, but the official report may be retained for law enforcement records according to their policies.</p>
+
+            <h3>Changes to This Privacy Policy</h3>
+            <p>We may update this Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page and updating the "Last updated" date. You are advised to review this Privacy Policy periodically for any changes.</p>
+        `;
+
+        const contactContent = `
+            <h1>Contact Us</h1>
+            <p>We're here to help. Whether you have a question about our service, a suggestion, or a partnership inquiry, please feel free to reach out. Please note: to report a stolen phone, you must visit an authorized police station in person.</p>
+            <form id="contact-form" class="mt-8 space-y-6">
+                 <div>
+                    <label for="contact-name" class="block text-sm font-medium text-gray-700">Full Name</label>
+                    <div class="mt-1"><input type="text" id="contact-name" required class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"></div>
+                 </div>
+                 <div>
+                    <label for="contact-email" class="block text-sm font-medium text-gray-700">Email Address</label>
+                    <div class="mt-1"><input type="email" id="contact-email" required class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"></div>
+                 </div>
+                 <div>
+                    <label for="contact-message" class="block text-sm font-medium text-gray-700">Message</label>
+                    <div class="mt-1"><textarea id="contact-message" rows="4" required class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"></textarea></div>
+                 </div>
+                 <div>
+                    <button type="submit" class="w-full flex justify-center py-3 px-4 border rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">Send Message</button>
+                 </div>
+            </form>
+        `;
+
+
+        // --- ROUTING & RENDERING ---
+        
+        const appContainer = document.getElementById('app-container');
+
+        function navigateTo(page) {
+            // Basic access control
+            const protectedPages = ['dashboard', 'createReport', 'viewReports'];
+            if (protectedPages.includes(page) && !appState.isLoggedIn) {
+                appState.currentPage = 'login';
+            } else {
+                 appState.currentPage = page;
+            }
+            window.scrollTo(0, 0);
+            render();
+        }
+
+        function render() {
+            const page = appState.currentPage;
+            let html = '';
+            
+            const isPublicPage = ['home', 'about', 'faq', 'privacy', 'contact'].includes(page);
+
+            if (isPublicPage) {
+                html += templates.navbar;
+            }
+            
+            if (page === 'home') html += templates.home;
+            else if (page === 'about') html += templates.simplePageLayout(aboutContent);
+            else if (page === 'faq') html += templates.simplePageLayout(faqContent);
+            else if (page === 'privacy') html += templates.simplePageLayout(privacyContent);
+            else if (page === 'contact') html += templates.simplePageLayout(contactContent);
+            else if (page === 'login') html += templates.login;
+            else if (page === 'auth') html += templates.auth;
+            else if (page === 'dashboard') html += templates.officerPortalLayout(templates.dashboard);
+            else if (page === 'createReport') html += templates.officerPortalLayout(templates.createReport);
+            else if (page === 'viewReports') html += templates.officerPortalLayout(templates.viewReports);
+            
+            if(isPublicPage) {
+                html += templates.footer;
+            }
+            
+            appContainer.innerHTML = html;
+            addEventListeners(); // Re-attach event listeners after every render
+        }
+
+        // --- EVENT LISTENERS & LOGIC ---
+
+        function addEventListeners() {
+            const page = appState.currentPage;
+
+            if (page === 'home') {
+                document.getElementById('imei-check-form').addEventListener('submit', handleImeiCheck);
+                document.getElementById('imei-input').addEventListener('input', (e) => {
+                    e.target.value = e.target.value.replace(/\D/g, '');
+                });
+            }
+            
+            if (['home', 'about', 'faq', 'privacy', 'contact'].includes(page)) {
+                const mobileMenuButton = document.getElementById('mobile-menu-button');
+                const mobileMenu = document.getElementById('mobile-menu');
+                if (mobileMenuButton) {
+                    mobileMenuButton.addEventListener('click', () => {
+                        mobileMenu.classList.toggle('hidden');
+                        mobileMenuButton.innerHTML = mobileMenu.classList.contains('hidden') ? MenuIcon : XIcon;
+                    });
+                }
+            }
+            
+            if (page === 'faq') {
+                document.querySelectorAll('.faq-question').forEach(button => {
+                    button.addEventListener('click', () => {
+                        const answer = button.nextElementSibling;
+                        const icon = button.querySelector('svg');
+                        
+                        answer.classList.toggle('open');
+                        icon.classList.toggle('rotate-180');
+                    });
+                });
+            }
+
+            if (page === 'contact') {
+                document.getElementById('contact-form').addEventListener('submit', handleContactSubmit);
+            }
+
+            if (page === 'login') {
+                document.getElementById('login-form').addEventListener('submit', handleLogin);
+            }
+            if (page === 'auth') {
+                document.getElementById('auth-form').addEventListener('submit', handleAuth);
+                const otpInputs = document.querySelectorAll('.otp-input');
+                otpInputs.forEach((input, index) => {
+                    input.addEventListener('keydown', (e) => {
+                        if (e.key >= 0 && e.key <= 9) {
+                            input.value = '';
+                            setTimeout(() => otpInputs[index + 1]?.focus(), 10);
+                        } else if (e.key === 'Backspace') {
+                            setTimeout(() => otpInputs[index - 1]?.focus(), 10);
+                        }
+                    });
+                });
+                otpInputs[0]?.focus();
+            }
+             if (page === 'createReport') {
+                renderCreateReportStep();
+            }
+             if (page === 'viewReports') {
+                renderReportsTable();
+                document.getElementById('report-search').addEventListener('input', (e) => renderReportsTable(e.target.value));
+            }
+        }
+        
+        // --- HANDLER FUNCTIONS ---
+        
+        function handleImeiCheck(e) {
+            e.preventDefault();
+            const imei = document.getElementById('imei-input').value;
+            const resultDiv = document.getElementById('imei-result');
+            const button = e.target.querySelector('button');
+            button.textContent = 'Checking...';
+
+            setTimeout(() => {
+                let result = {};
+                if (imei === '123456789012345') {
+                    result = { status: 'stolen', message: 'This device has been reported stolen. Do not buy!' };
+                } else {
+                    result = { status: 'safe', message: 'This device has not been reported stolen. Safe to buy!' };
+                }
+                
+                const bgColor = result.status === 'stolen' ? 'bg-red-100 border-l-4 border-red-500 text-red-700' : 'bg-green-100 border-l-4 border-green-500 text-green-700';
+                const title = result.status === 'stolen' ? 'Warning!' : 'All Clear!';
+
+                resultDiv.innerHTML = `<div class="p-4 rounded-md text-left ${bgColor}"><p class="font-bold">${title}</p><p>${result.message}</p></div>`;
+                button.textContent = 'Check IMEI';
+            }, 1500);
+        }
+
+        function handleContactSubmit(e) {
+            e.preventDefault();
+            const form = e.target;
+            showModal('Message Sent!', 'Thank you for contacting us. We will get back to you shortly.');
+            form.reset();
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const stationId = document.getElementById('stationId').value;
+            const password = document.getElementById('password').value;
+            if (!stationId || !password) {
+                 document.getElementById('login-message').textContent = 'Please enter both Station ID and Password.';
+                 return;
+            }
+            navigateTo('auth');
+        }
+
+        function handleAuth(e) {
+            e.preventDefault();
+            appState.isLoggedIn = true;
+            navigateTo('dashboard');
+        }
+
+        function handleLogout() {
+            appState.isLoggedIn = false;
+            navigateTo('home');
+        }
+        
+        // --- VIEW REPORTS LOGIC ---
+        function renderReportsTable(searchTerm = '') {
+            const tableBody = document.getElementById('reports-table-body');
+            const filteredReports = appState.stationReports.filter(report => 
+                report.imei.includes(searchTerm) || 
+                report.brand.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                report.model.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+
+            if (filteredReports.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="4" class="text-center text-gray-500 py-10">No reports found.</td></tr>`;
+                return;
+            }
+
+            tableBody.innerHTML = filteredReports.map(report => `
+                <tr>
+                    <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">${report.imei}</td>
+                    <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">${report.brand} ${report.model}</td>
+                    <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">${report.date}</td>
+                    <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                        <span class="inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${report.status === 'Stolen' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}">
+                            ${report.status}
+                        </span>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // --- CREATE REPORT FLOW LOGIC ---
+
+        const deviceBrands = ["Select Brand...", "Samsung", "Apple", "Tecno", "Infinix", "Xiaomi", "Nokia", "itel", "Oppo", "Vivo", "Realme", "Gionee", "Huawei", "Other"];
+        const deviceColors = ["Select Color...", "Black", "White", "Blue", "Gold", "Silver", "Red", "Green", "Gray", "Purple", "Rose Gold", "Other"];
+        const incidentTypes = ["Select Type...", "Snatching (in transit)", "Armed Robbery", "Burglary (house/office)", "Misplaced / Lost", "Pickpocketing", "Other"];
+
+        function renderCreateReportStep() {
+            const step = appState.createReportStep;
+            const data = appState.reportData;
+
+            const titles = ["Personal Information", "Device Information", "Incident Information", "Proof of Ownership", "Details Confirmation"];
+            document.getElementById('report-subtitle').textContent = titles[step - 1];
+
+            const progressIndicator = document.getElementById('progress-indicator');
+            progressIndicator.innerHTML = `
+                <div class="flex justify-between mb-1"><span class="text-base font-medium text-blue-700">Step ${step} of 5</span></div>
+                <div class="w-full bg-gray-200 rounded-full h-2.5"><div class="bg-blue-600 h-2.5 rounded-full" style="width: ${ (step / 5) * 100}%"></div></div>
+            `;
+            
+            const container = document.getElementById('report-step-container');
+            let content = '';
+
+            const formInput = (label, id, props = "") => `<div><label for="${id}" class="block text-sm font-medium text-gray-700">${label}</label><div class="mt-1"><input id="${id}" name="${id}" ${props} class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"></div><p id="${id}-error" class="text-xs text-red-600 mt-1"></p></div>`;
+            const formSelect = (label, id, options, props = "") => {
+                const optionsHTML = options.map(option => `<option value="${option}">${option}</option>`).join('');
+                return `<div><label for="${id}" class="block text-sm font-medium text-gray-700">${label}</label><div class="mt-1"><select id="${id}" name="${id}" ${props} class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-white">${optionsHTML}</select></div></div>`;
+            };
+            const textArea = (label, id) => `<div><label for="${id}" class="block text-sm font-medium text-gray-700">${label}</label><textarea id="${id}" rows="3" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"></textarea></div>`;
+            const fileInput = (label, id) => `<div class="mt-1"><label class="block text-sm font-medium text-gray-700">${label}</label><div id="${id}-dropzone" class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md"><div class="space-y-1 text-center"><img id="${id}-preview" class="hidden mx-auto h-24 w-auto mb-4" /><svg id="${id}-svg" class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48"><path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg><div class="flex text-sm text-gray-600"><label for="${id}" class="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500"><span>Upload a file</span><input id="${id}" name="${id}" type="file" class="sr-only"></label><p class="pl-1">or drag and drop</p></div><p class="text-xs text-gray-500">PNG, JPG up to 10MB</p><p id="${id}-feedback" class="text-sm font-semibold text-green-600 mt-2"></p></div></div></div>`;
+            const navButtons = (showBack = true, nextLabel = "Next") => `<div class="flex gap-4 mt-6">${showBack ? '<button type="button" onclick="prevStep()" class="w-full justify-center py-2 px-4 border border-gray-300 rounded-md text-sm bg-white hover:bg-gray-50">Back</button>' : ''}<button type="submit" class="w-full justify-center py-2 px-4 border rounded-md text-sm text-white ${nextLabel === 'Submit Report' ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'}">${nextLabel}</button></div>`;
+
+            if (step === 1) {
+                content = `<form id="step1-form" class="space-y-4">${formInput("Full Name", "fullName", 'required')} ${formInput("Phone Number", "phoneNumber", 'type="tel" required')} ${formInput("Email Address (Optional)", "email", 'type="email"')} ${textArea("Address", "address")} ${navButtons(false)}</form>`;
+            } else if (step === 2) {
+                content = `<form id="step2-form" class="space-y-4">${formInput("IMEI Number", "imei", 'maxlength="15" required')} ${formSelect("Device Brand", "brand", deviceBrands, 'required')} ${formInput("Device Model Number", "model", 'required')} ${formSelect("Device Color", "color", deviceColors)} ${formInput("Device Phone Number (Last Used)", "devicePhone", 'type="tel"')} ${navButtons()}</form>`;
+            } else if (step === 3) {
+                 content = `<form id="step3-form" class="space-y-4">${formInput("Date of Incident", "date", 'type="date" required')} ${formInput("Time of Incident", "time", 'type="time" required')} ${formSelect("Type of Incident", "type", incidentTypes, 'required')} ${textArea("Last Seen Location / Address", "location")} ${navButtons()}</form>`;
+            } else if (step === 4) {
+                 content = `<form id="step4-form" class="space-y-4"> ${fileInput("Owner's Passport / ID", "ownerId")} ${fileInput("Device Carton / Box Photo", "carton")} ${fileInput("Device Receipt (Optional)", "receipt")} ${navButtons()}</form>`;
+            } else if (step === 5) {
+                const detailItem = (label, value) => `<div class="py-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6"><dt class="text-sm font-medium text-gray-500">${label}</dt><dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">${value || 'Not provided'}</dd></div>`;
+                content = `
+                    <div class="bg-white shadow overflow-hidden sm:rounded-lg"><div class="px-4 py-5"><h3 class="text-lg font-medium text-gray-900">Confirm Report Details</h3></div><div class="border-t border-gray-200"><dl class="divide-y divide-gray-200">
+                        ${detailItem("Full Name", data.fullName)} ${detailItem("Phone Number", data.phoneNumber)} ${detailItem("IMEI", data.imei)}
+                        ${detailItem("Device", `${data.brand || ''} ${data.model || ''}`)} ${detailItem("Date of Incident", data.date)}
+                        ${detailItem("Owner ID File", data.ownerIdFile)} ${detailItem("Carton Photo File", data.cartonFile)}
+                    </dl></div></div>
+                    <form id="step5-form" class="mt-6 space-y-4">
+                        ${formInput("Transaction Reference", "transactionRef", "required placeholder='Enter payment reference'")}
+                        <div class="flex items-start"><div class="flex items-center h-5"><input id="terms" type="checkbox" required class="h-4 w-4 text-blue-600 border-gray-300 rounded"></div><div class="ml-3 text-sm"><label for="terms" class="font-medium text-gray-700">Acceptance of Terms</label><p class="text-gray-500">You confirm the details are accurate and agree to the Terms & Conditions.</p></div></div>
+                        ${navButtons(true, 'Submit Report')}
+                    </form>
+                `;
+            }
+            container.innerHTML = content;
+            addReportStepListeners();
+        }
+
+        function addReportStepListeners() {
+            const step = appState.createReportStep;
+            const form = document.getElementById(`step${step}-form`);
+            if (form) {
+                // Populate form with existing data
+                for (const key in appState.reportData) {
+                    const input = form.querySelector(`#${key}`);
+                    if(input) input.value = appState.reportData[key];
+                }
+                form.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    // Save data before moving to next step
+                    const formData = new FormData(e.target);
+                    for (let [key, value] of formData.entries()) {
+                       appState.reportData[key] = value;
+                    }
+                    if (step === 5) {
+                        submitReport();
+                    } else {
+                        nextStep();
+                    }
+                });
+            }
+             if (step === 2) { // Add IMEI validation listener
+                const imeiInput = document.getElementById('imei');
+                imeiInput.addEventListener('input', validateImeiInput);
+             }
+             if (step === 4) {
+                ['ownerId', 'carton', 'receipt'].forEach(id => {
+                    const input = document.getElementById(id);
+                    input.addEventListener('change', (e) => handleFileUpload(e, id));
+                });
+            }
+        }
+        
+        // --- FORM VALIDATION LOGIC ---
+        
+        function isValidLuhn(imei) {
+            if (/[^0-9-\s]+/.test(imei)) return false;
+            let nCheck = 0, bEven = false;
+            imei = imei.replace(/\D/g, "");
+            for (var n = imei.length - 1; n >= 0; n--) {
+                var cDigit = imei.charAt(n),
+                      nDigit = parseInt(cDigit, 10);
+                if (bEven && (nDigit *= 2) > 9) nDigit -= 9;
+                nCheck += nDigit;
+                bEven = !bEven;
+            }
+            return (nCheck % 10) == 0;
+        }
+
+        function validateImeiInput(e) {
+            const input = e.target;
+            const value = input.value;
+            const errorEl = document.getElementById('imei-error');
+            const submitButton = document.querySelector('#step2-form button[type="submit"]');
+
+            // Clear previous state
+            input.classList.remove('input-error', 'input-success');
+            errorEl.textContent = '';
+            errorEl.classList.remove('text-green-600', 'text-red-600');
+            submitButton.disabled = false;
+            
+            if (value.length > 0 && !/^\d+$/.test(value)) {
+                errorEl.textContent = 'IMEI must contain only numbers.';
+                errorEl.classList.add('text-red-600');
+                input.classList.add('input-error');
+                submitButton.disabled = true;
+                return;
+            }
+
+            if (value.length > 0 && value.length < 15) {
+                errorEl.textContent = `IMEI must be 15 digits long. (${value.length}/15)`;
+                errorEl.classList.add('text-red-600');
+                input.classList.add('input-error');
+                submitButton.disabled = true;
+                return;
+            }
+            
+            if (value.length === 15) {
+                if (isValidLuhn(value)) {
+                    errorEl.textContent = 'Valid IMEI format.';
+                    errorEl.classList.add('text-green-600');
+                    input.classList.add('input-success');
+                } else {
+                    errorEl.textContent = 'Invalid IMEI. Please check the number.';
+                    errorEl.classList.add('text-red-600');
+                    input.classList.add('input-error');
+                    submitButton.disabled = true;
+                }
+            }
+        }
+
+
+        function nextStep() {
+            appState.createReportStep++;
+            renderCreateReportStep();
+        }
+        function prevStep() {
+            appState.createReportStep--;
+            renderCreateReportStep();
+        }
+
+        function handleFileUpload(event, id) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            appState.reportData[`${id}File`] = file.name;
+            const feedbackEl = document.getElementById(`${id}-feedback`);
+            const previewEl = document.getElementById(`${id}-preview`);
+            const svgEl = document.getElementById(`${id}-svg`);
+
+            feedbackEl.textContent = `File selected: ${file.name}`;
+            
+            // Show image preview if it's an image
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    previewEl.src = e.target.result;
+                    previewEl.classList.remove('hidden');
+                    svgEl.classList.add('hidden');
+                };
+                reader.readAsDataURL(file);
+            } else {
+                 previewEl.classList.add('hidden');
+                 svgEl.classList.remove('hidden');
+            }
+        }
+
+        function submitReport() {
+            console.log("Submitting report:", appState.reportData);
+            showModal('Report Submitted', 'The report has been successfully submitted for review.');
+            appState.createReportStep = 1; // Reset for next time
+            appState.reportData = {};
+            // We don't navigate away automatically, the user closes the modal
+        }
+
+        // --- MODAL LOGIC ---
+        function showModal(title, message, onOk) {
+            document.getElementById('modal-title').textContent = title;
+            document.getElementById('modal-message').textContent = message;
+            const modal = document.getElementById('success-modal');
+            modal.classList.remove('hidden');
+            
+            const closeButton = document.getElementById('modal-close-button');
+            closeButton.onclick = () => {
+                modal.classList.add('hidden');
+                if (onOk) onOk(); // Execute callback if provided
+            };
+        }
+
+
+        // --- INITIALIZATION ---
+        window.onload = render;
+
+    </script>
+</body>
+</html>
+
+
+
