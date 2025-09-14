@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% block title %}Station Reports{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-100">
+    {% include 'partials/navbar_officer.html' %}
+
+    <main class="py-6">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="mb-5">
+                <a href="{% url 'dashboard' %}" class="inline-flex items-center text-sm font-medium text-gray-600 hover:text-gray-900">
+                    &larr; Back to Dashboard
+                </a>
+            </div>
+            <div class="sm:flex sm:items-center sm:justify-between">
+                <h1 class="text-2xl font-semibold text-gray-900">Station Reports</h1>
+                <div class="mt-4 sm:mt-0">
+                    <form method="GET" class="flex gap-2">
+                        <input type="search" name="search" placeholder="Search by IMEI..." value="{{ request.GET.search }}" class="w-full sm:w-auto px-3 py-2 border border-gray-300 rounded-md shadow-sm">
+                        <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md">Search</button>
+                    </form>
+                </div>
+            </div>
+            <div class="mt-8 flex flex-col">
+                <div class="-my-2 -mx-4 overflow-x-auto sm:-mx-6 lg:-mx-8">
+                    <div class="inline-block min-w-full py-2 align-middle md:px-6 lg:px-8">
+                        <div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
+                            <table class="min-w-full divide-y divide-gray-300">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">IMEI</th>
+                                        <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Device</th>
+                                        <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Date Reported</th>
+                                        <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-200 bg-white">
+                                    {% for report in reports %}
+                                    <tr>
+                                        <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">{{ report.imei }}</td>
+                                        <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ report.brand }} {{ report.model }}</td>
+                                        <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ report.created_at|date:"Y-m-d" }}</td>
+                                        <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                                            {% if report.status == 'Stolen' %}
+                                            <span class="inline-flex rounded-full px-2 text-xs font-semibold leading-5 bg-red-100 text-red-800">{{ report.status }}</span>
+                                            {% else %}
+                                            <span class="inline-flex rounded-full px-2 text-xs font-semibold leading-5 bg-green-100 text-green-800">{{ report.status }}</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="4" class="text-center text-gray-500 py-10">No reports found for this station.</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+{% endblock %}

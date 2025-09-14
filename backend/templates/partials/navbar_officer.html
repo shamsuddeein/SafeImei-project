@@ -1,0 +1,13 @@
+<nav class="bg-white border-b border-gray-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between h-16">
+            <div class="flex items-center gap-2 text-xl font-bold text-blue-600">
+                <a href="{% url 'dashboard' %}">SafeIMEI Officer Portal</a>
+            </div>
+            <div class="flex items-center">
+                <span class="hidden sm:inline mr-4 text-sm text-gray-700">Welcome, {{ request.user.username }}</span>
+                <a href="{% url 'logout' %}" class="text-sm font-medium text-red-500 hover:text-red-700">Logout</a>
+            </div>
+        </div>
+    </div>
+</nav>

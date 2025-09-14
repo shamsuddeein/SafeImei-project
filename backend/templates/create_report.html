@@ -1,0 +1,162 @@
+{% extends 'base.html' %}
+{% block title %}Create New Report{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-100">
+    {% include 'partials/navbar_officer.html' %}
+
+    <main class="py-6">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="mb-5">
+                {% if step > 1 %}
+                <a href="{% url 'create_report' step=step|add:'-1' %}" class="inline-flex items-center text-sm font-medium text-gray-600 hover:text-gray-900">
+                    &larr; Back
+                </a>
+                {% else %}
+                 <a href="{% url 'dashboard' %}" class="inline-flex items-center text-sm font-medium text-gray-600 hover:text-gray-900">
+                    &larr; Back to Dashboard
+                </a>
+                {% endif %}
+            </div>
+
+            <h1 class="text-2xl font-semibold text-gray-900 mb-2">Create New Report</h1>
+            <h2 class="text-lg text-gray-600 mb-6">{{ form_title }}</h2>
+
+            <div class="bg-white p-8 rounded-lg shadow-lg">
+                <div class="mb-8">
+                    <div class="flex justify-between mb-1">
+                        <span class="text-base font-medium text-blue-700">Step {{ step }} of {{ total_steps }}</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2.5">
+                        <div class="bg-blue-600 h-2.5 rounded-full" style="width: {% widthratio step total_steps 100 %}%"></div>
+                    </div>
+                </div>
+
+                {% if step == total_steps %}
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Confirm Report Details</h3>
+                <div class="bg-gray-50 shadow-inner overflow-hidden sm:rounded-lg mb-6 border">
+                    <div class="border-t border-gray-200">
+                        <dl class="divide-y divide-gray-200">
+                            {% for key, value in report_data.items %}
+                            <div class="py-3 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                                <dt class="text-sm font-medium text-gray-500">{{ key|title|cut:"_" }}</dt>
+                                <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ value|default:"Not provided" }}</dd>
+                            </div>
+                            {% endfor %}
+                        </dl>
+                    </div>
+                </div>
+                <hr class="my-6">
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Upload Proofs and Finalize</h3>
+                {% endif %}
+
+                <form method="POST" enctype="multipart/form-data" class="space-y-6">
+                    {% csrf_token %}
+
+                    {% for field in form %}
+                        {% if field.name == 'imei' %}
+                        <div>
+                            <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700">{{ field.label }}</label>
+                            <div class="mt-1">{{ field }}</div>
+                            <p id="imei-feedback" class="mt-1 text-xs"></p>
+                            {% if field.errors %}
+                            <p class="mt-1 text-xs text-red-600">{{ field.errors.as_text }}</p>
+                            {% endif %}
+                        </div>
+                        {% else %}
+                        <div>
+                            <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700">{{ field.label }}</label>
+                            {% if field.name == 'terms' %}
+                            <div class="flex items-start mt-1">
+                                <div class="flex items-center h-5">{{ field }}</div>
+                                <div class="ml-3 text-sm">
+                                    <p class="text-gray-500">You confirm the details are accurate and agree to the Terms & Conditions.</p>
+                                </div>
+                            </div>
+                            {% else %}
+                            <div class="mt-1">{{ field }}</div>
+                            {% endif %}
+                            {% if field.help_text %}
+                            <p class="mt-1 text-xs text-gray-500">{{ field.help_text }}</p>
+                            {% endif %}
+                            {% if field.errors %}
+                            <p class="mt-1 text-xs text-red-600">{{ field.errors.as_text }}</p>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                    <div class="pt-4">
+                        <button type="submit" id="submit-button" class="w-full flex justify-center py-3 px-4 border rounded-md shadow-sm text-sm font-medium text-white {% if step == total_steps %}bg-green-600 hover:bg-green-700{% else %}bg-blue-600 hover:bg-blue-700{% endif %}">
+                            {% if step == total_steps %}Submit Report{% else %}Next &rarr;{% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const imeiInput = document.getElementById('id_imei');
+    const submitButton = document.getElementById('submit-button');
+
+    if (imeiInput) {
+        const imeiFeedback = document.getElementById('imei-feedback');
+
+        function isValidLuhn(imei) {
+            let nCheck = 0, bEven = false;
+            imei = imei.replace(/\D/g, "");
+            for (let n = imei.length - 1; n >= 0; n--) {
+                let cDigit = imei.charAt(n), nDigit = parseInt(cDigit, 10);
+                if (bEven && (nDigit *= 2) > 9) nDigit -= 9;
+                nCheck += nDigit;
+                bEven = !bEven;
+            }
+            return (nCheck % 10) == 0;
+        }
+
+        function validateImei() {
+            const imei = imeiInput.value;
+            let isValid = false;
+
+            imeiInput.style.borderColor = '#d1d5db';
+            imeiFeedback.textContent = '';
+            imeiFeedback.style.color = '';
+
+            if (imei.length === 0) return;
+
+            if (/[^0-9]/.test(imei)) {
+                imeiFeedback.textContent = 'IMEI must contain only numbers.';
+                imeiFeedback.style.color = '#ef4444';
+                imeiInput.style.borderColor = '#ef4444';
+            } else if (imei.length < 15) {
+                imeiFeedback.textContent = `IMEI must be 15 digits long. (${imei.length}/15)`;
+                imeiFeedback.style.color = '#ef4444';
+                imeiInput.style.borderColor = '#ef4444';
+            } else if (imei.length === 15) {
+                if (isValidLuhn(imei)) {
+                    imeiFeedback.textContent = 'Valid IMEI format.';
+                    imeiFeedback.style.color = '#22c55e';
+                    imeiInput.style.borderColor = '#22c55e';
+                    isValid = true;
+                } else {
+                    imeiFeedback.textContent = 'Invalid IMEI. Please check the number.';
+                    imeiFeedback.style.color = '#ef4444';
+                    imeiInput.style.borderColor = '#ef4444';
+                }
+            }
+
+            submitButton.disabled = !isValid;
+            submitButton.style.cursor = isValid ? 'pointer' : 'not-allowed';
+            submitButton.style.opacity = isValid ? '1' : '0.5';
+        }
+
+        validateImei();
+        imeiInput.addEventListener('input', validateImei);
+    }
+});
+</script>
+{% endblock %}
