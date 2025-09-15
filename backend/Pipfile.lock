@@ -1,12 +1,10 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "e9d54dd462db7fd79f1c139fba1843285301266118db81515200ef795a4f9d1f"
+            "sha256": "901bb4794e72a8b4eb8fd63bfad0fd08c8e7d905521de43b5eb6f8c2baa8e4f5"
         },
         "pipfile-spec": 6,
         "requires": {
-            "dj-database-url": "*",
-            "django-anymail[mailgun]": "*",
             "python_version": "3.12"
         },
         "sources": [
@@ -118,6 +116,14 @@
             ],
             "markers": "python_version >= '3.7'",
             "version": "==3.4.3"
+        },
+        "dj-database-url": {
+            "hashes": [
+                "sha256:43950018e1eeea486bf11136384aec0fe55b29fe6fd8a44553231b85661d9383",
+                "sha256:8994961efb888fc6bf8c41550870c91f6f7691ca751888ebaa71442b7f84eff8"
+            ],
+            "index": "pypi",
+            "version": "==3.0.1"
         },
         "django": {
             "hashes": [
