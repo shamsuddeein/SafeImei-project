@@ -3,10 +3,20 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 name = "pypi"
 
+
 [packages]
 django = "*"
+psycopg2-binary = "*"
+python-decouple = "*"
+"django-anymail[mailgun]" = "*"
+gunicorn = "*"
+whitenoise = "*"
 
 [dev-packages]
 
 [requires]
 python_version = "3.12"
+
+
+"django-anymail[mailgun]" = "*"
+

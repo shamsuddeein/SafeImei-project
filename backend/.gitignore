@@ -1,0 +1,48 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+
+# Django
+*.sqlite3
+db.sqlite3
+media/
+staticfiles/
+local_settings.py
+
+# Virtualenv
+venv/
+ENV/
+.env/
+.venv/
+
+# Environment variables
+.env
+.env.production
+
+# Database file
+db.sqlite3
+
+
+# Migrations
+*/migrations/
+!*/migrations/__init__.py
+
+# pip
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Coverage reports
+htmlcov/
+.coverage
+.tox/
+nosetests.xml
+coverage.xml
+*.cover
+
+# Others
+*.pot
+*.mo
+*.log
