@@ -1,0 +1,30 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: 'Inter', sans-serif;
+}
+.prose h1 { font-size: 2.25rem; font-weight: 800; margin-bottom: 1em; }
+.prose h3 { font-size: 1.25rem; font-weight: 700; margin-top: 2em; margin-bottom: 1em; }
+.prose p { margin-bottom: 1.25em; line-height: 1.75; }
+.prose ul { list-style-type: disc; margin-left: 1.5em; margin-bottom: 1.25em;}
+.prose li { margin-bottom: 0.5em; }
+.faq-answer {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease-in-out;
+}
+.faq-answer.open {
+  max-height: 300px;
+}
+.input-error {
+  border-color: #ef4444;
+}
+.input-success {
+  border-color: #22c55e;
+}
+.modal-overlay {
+  transition: opacity 0.3s ease;
+}

@@ -1,0 +1,17 @@
+import SimplePageLayout from '../components/SimplePageLayout';
+
+const aboutContent = `
+  <h1>Our Mission: A Safer Second-Hand Market for All</h1>
+  <p>SafeIMEI was born from a simple yet powerful mission: to make the second-hand mobile phone market in Nigeria safer for everyone. We recognized the pervasive problem of phone theft and the subsequent resale of these stolen devices, which traps unsuspecting buyers and perpetuates a cycle of crime that affects families and communities across the nation.</p>
+  <h3>The Problem We Solve</h3>
+  <p>Every year, countless Nigerians fall victim to phone theft. Beyond the financial loss, this experience brings a sense of violation and helplessness. For too long, there has been no effective, centralized system to prevent these stolen devices from simply re-entering the market. Buyers, acting in good faith, have been left with no way to verify the legitimacy of a device before purchase, putting them at risk of losing their money and unintentionally supporting criminal activity.</p>
+  <h3>Our Solution</h3>
+  <p>Our solution is a robust, centralized platform, developed in close partnership with Nigerian law enforcement agencies. We provide a secure, dedicated portal for police officers to log verified reports of stolen phones. This creates a trusted, real-time national database that serves as the single source of truth for device status.</p>
+  <p>For the public, we offer a free, simple, and instant IMEI verification tool. Before you buy a used phone—whether from a street vendor, an online marketplace, or a friend—you can perform a quick check to ensure it hasn't been reported stolen. This simple action provides the confidence and peace of mind you deserve in your purchase.</p>
+  <h3>Our Vision for the Future</h3>
+  <p>We are committed to disrupting the market for stolen electronics, protecting consumers, and contributing to a safer community for all Nigerians. By making it difficult to resell stolen phones, we aim to reduce the incentive for theft in the first place. We envision a future where every buyer is empowered, every transaction is transparent, and every citizen feels more secure.</p>
+`;
+
+export default function About() {
+  return <SimplePageLayout content={aboutContent} />;
+}
