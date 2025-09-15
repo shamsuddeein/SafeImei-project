@@ -1,5 +1,7 @@
 from django.contrib import admin
 from .models import Station, OfficerProfile, DeviceReport
+from django.core.management import call_command # Import this
+from django.contrib import messages # Import this
 
 @admin.register(Station)
 class StationAdmin(admin.ModelAdmin):
@@ -8,6 +10,19 @@ class StationAdmin(admin.ModelAdmin):
     """
     list_display = ('name', 'location')
     search_fields = ('name', 'location')
+
+    # --- START: ADD THIS ACTION ---
+    actions = ["seed_database_data"]
+
+    @admin.action(description='Seed database with all states and demo data')
+    def seed_database_data(self, request, queryset):
+        try:
+            call_command('seed_data')
+            self.message_user(request, "Successfully seeded the database with all states and demo data.", messages.SUCCESS)
+        except Exception as e:
+            self.message_user(request, f"An error occurred while seeding the database: {e}", messages.ERROR)
+    # --- END: ADD THIS ACTION ---
+
 
 @admin.register(OfficerProfile)
 class OfficerProfileAdmin(admin.ModelAdmin):
