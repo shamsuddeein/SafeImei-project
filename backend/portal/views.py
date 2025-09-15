@@ -11,6 +11,15 @@ from django.contrib.auth.models import User
 from .models import DeviceReport
 from .forms import ReportStep1Form, ReportStep2Form, ReportStep3Form, ReportStep4Form
 
+# backend/portal/views.py
+# ... (add these imports at the top with the others)
+from django.http import HttpResponse
+from django.core.management import call_command
+from django.contrib.auth.decorators import user_passes_test
+
+# ... (all your other views stay the same) ...
+
+
 # --- No changes needed in the views above this line ---
 # (home_view, officer_login_view, etc. remain the same)
 def home_view(request):
@@ -189,3 +198,19 @@ def about(request):
 def privacy(request):
     return render(request, 'privacy.html')
 
+
+
+# --- ADD THIS NEW VIEW AT THE BOTTOM OF THE FILE ---
+@user_passes_test(lambda u: u.is_superuser)
+def seed_database_view(request):
+    """
+    A secure view for a superuser to trigger the seed_data command.
+    """
+    try:
+        # Run the management command
+        call_command('seed_data')
+        # Return a success message
+        return HttpResponse("<h1>Database Seeding Successful!</h1><p>The command has completed.</p>")
+    except Exception as e:
+        # Return an error message if something goes wrong
+        return HttpResponse(f"<h1>Error Seeding Database</h1><p>An error occurred: {e}</p>", status=500)
