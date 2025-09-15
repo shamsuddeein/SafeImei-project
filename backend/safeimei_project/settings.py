@@ -9,7 +9,7 @@ https://docs.djangoproject.com/en/5.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
-
+import dj_database_url
 from decouple import config, Csv
 import os
 from pathlib import Path
@@ -76,15 +76,26 @@ WSGI_APPLICATION = 'safeimei_project.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': config('DATABASE_NAME'),
+#         'USER': config('DATABASE_USER'),
+#         'PASSWORD': config('DATABASE_PASSWORD'),
+#         'HOST': config('DATABASE_HOST'),
+#         'PORT': config('DATABASE_PORT', default='5432'),
+#     }
+# }
+
+
+# --- DATABASE CONFIGURATION ---
+# This setup uses the DATABASE_URL from Render when deployed,
+# and falls back to your .env variables for local development.
+
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': config('DATABASE_NAME'),
-        'USER': config('DATABASE_USER'),
-        'PASSWORD': config('DATABASE_PASSWORD'),
-        'HOST': config('DATABASE_HOST'),
-        'PORT': config('DATABASE_PORT', default='5432'),
-    }
+    'default': dj_database_url.config(
+        default=f"postgres://{config('DATABASE_USER')}:{config('DATABASE_PASSWORD')}@{config('DATABASE_HOST')}:{config('DATABASE_PORT')}/{config('DATABASE_NAME')}"
+    )
 }
 
 # Password validation

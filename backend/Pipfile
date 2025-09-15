@@ -20,3 +20,5 @@ python_version = "3.12"
 
 "django-anymail[mailgun]" = "*"
 
+dj-database-url = "*"
+

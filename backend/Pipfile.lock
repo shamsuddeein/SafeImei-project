@@ -1,10 +1,11 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "a59613767bd8fcb64255070a69c27f4bbdae16000ea90d69b9d34ec48c43cb17"
+            "sha256": "e9d54dd462db7fd79f1c139fba1843285301266118db81515200ef795a4f9d1f"
         },
         "pipfile-spec": 6,
         "requires": {
+            "dj-database-url": "*",
             "django-anymail[mailgun]": "*",
             "python_version": "3.12"
         },
