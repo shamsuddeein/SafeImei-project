@@ -23,5 +23,6 @@ urlpatterns = [
     path('about/', views.about, name='about'),
     path('privacy/', views.privacy, name='privacy'),
     path('your-secret-seeding-url-12345/', views.seed_database_view, name='seed_database'),
+    path('anonymous-alert/', views.anonymous_alert_view, name='anonymous_alert'),
 
 ]
