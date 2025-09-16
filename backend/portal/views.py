@@ -19,13 +19,11 @@ def home_view(request):
     if request.method == 'POST':
         imei = request.POST.get('imei')
         try:
-            # We add this extra data to the result for the new alert feature
             report = DeviceReport.objects.get(imei=imei, status=DeviceReport.StatusChoices.STOLEN)
             imei_result = {'status': 'stolen', 'message': f'This device (IMEI: {imei}) has been reported stolen.', 'imei': imei}
         except DeviceReport.DoesNotExist:
             imei_result = {'status': 'safe', 'message': f'This device (IMEI: {imei}) has not been reported stolen.'}
     
-    # Check if we are showing a success message from the anonymous alert
     alert_success = request.GET.get('alert_success', False)
     return render(request, 'home.html', {'imei_result': imei_result, 'alert_success': alert_success})
 
@@ -129,12 +127,10 @@ def create_report_view(request, step):
         form = form_class(request.POST, request.FILES if step == len(FORMS) else None)
         if form.is_valid():
             cleaned_data = form.cleaned_data
-            # Convert date/time objects to strings before storing in session
             for key, value in cleaned_data.items():
                 if isinstance(value, (datetime.date, datetime.time)):
                     cleaned_data[key] = value.isoformat()
             
-            # Update session data
             request.session.setdefault('report_data', {}).update(cleaned_data)
             request.session.modified = True
             
@@ -177,16 +173,21 @@ def anonymous_alert_view(request):
                     ip = request.META.get('REMOTE_ADDR')
                 
                 location = "Unknown Location"
+                # --- START: UPDATED GEOLOCATION LOGIC ---
                 try:
-                    response = requests.get(f'https://ipapi.co/{ip}/json/')
+                    # NOTE: This is a public, free-tier token.
+                    token = 'a1a23a3a62f37c' 
+                    response = requests.get(f'https://ipinfo.io/{ip}?token={token}')
                     if response.status_code == 200:
                         data = response.json()
-                        city = data.get('city', 'N/A')
-                        region = data.get('region', 'N/A')
-                        country = data.get('country_name', 'N/A')
-                        location = f"{city}, {region}, {country}"
+                        city = data.get('city')
+                        region = data.get('region')
+                        country = data.get('country') # Note: field is 'country'
+                        if city and region and country:
+                            location = f"{city}, {region}, {country}"
                 except Exception:
-                    pass
+                    pass # If the location lookup fails, we still send the alert
+                # --- END: UPDATED GEOLOCATION LOGIC ---
 
                 subject = f"Anonymous Tip: Stolen Device (IMEI: {imei})"
                 message = (
@@ -198,7 +199,6 @@ def anonymous_alert_view(request):
                 )
                 send_mail(subject, message, 'noreply@safeimei.com', [officer_email], fail_silently=False)
                 
-                # Redirect with a query parameter to show a success message
                 return redirect(f"{reverse('home')}?alert_success=True")
             except DeviceReport.DoesNotExist:
                 return HttpResponse("Report not found.", status=404)
