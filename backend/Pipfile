@@ -11,6 +11,7 @@ python-decouple = "*"
 gunicorn = "*"
 whitenoise = "*"
 dj-database-url = "*"
+django-jazzmin = "*"
 
 [dev-packages]
 

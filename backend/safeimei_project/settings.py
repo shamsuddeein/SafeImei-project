@@ -33,6 +33,7 @@ ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='.localhost,127.0.0.1', cast=Csv
 # Application definition
 
 INSTALLED_APPS = [
+    'jazzmin',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -168,3 +169,38 @@ EMAIL_HOST_USER = config('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
+
+# backend/safeimei_project/settings.py
+
+# ... at the very bottom of the file
+
+# backend/safeimei_project/settings.py
+
+JAZZMIN_SETTINGS = {
+    # ... (your other settings like "site_title", "site_header" stay the same) ...
+
+    "site_title": "SafeIMEI Admin",
+    "site_header": "SafeIMEI",
+    "site_brand": "SafeIMEI Admin",
+    "welcome_sign": "Welcome to the SafeIMEI Administration Portal",
+    "copyright": "SafeIMEI Ltd",
+
+    # --- REPLACE THE OLD UI_TWEAKS WITH THIS NEW ONE ---
+    "ui_tweaks": {
+        "navbar_small_text": False,
+        "footer_small_text": False,
+        "body_small_text": False,
+        "brand_small_text": False,
+        "brand_colour": "navbar-light",
+        "accent": "accent-primary",
+        "navbar": "navbar-light",
+        "no_navbar_border": False,
+        "sidebar": "sidebar-light-primary",
+        "sidebar_nav_small_text": False,
+        "sidebar_disable_expand": False,
+        "sidebar_nav_child_indent": False,
+        "sidebar_nav_compact_style": False,
+        "sidebar_nav_legacy_style": True,
+        "sidebar_nav_flat_style": False
+    }
+}
