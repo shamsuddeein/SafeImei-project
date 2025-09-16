@@ -1,0 +1,24 @@
+{% extends "admin/base.html" %}
+{% load i18n static %}
+
+{% block title %}{% trans 'Logged out' %}{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: center; align-items: center; height: 50vh;">
+  <div style="background-color: #fff; padding: 2rem; border-radius: 0.5rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); text-align: center; max-width: 400px; width: 100%;">
+    
+    <div style="margin: 0 auto 1rem auto; color: #2563eb;">
+      <svg class="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="height: 3rem; width: 3rem; margin: auto;">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+      </svg>
+    </div>
+
+    <h2 style="font-size: 1.5rem; font-weight: 600; margin-bottom: 0.5rem;">{% trans 'Logged out' %}</h2>
+    <p style="color: #6b7280; margin-bottom: 1.5rem;">{% trans 'Thank you for your time.' %}</p>
+    
+    <a href="{% url 'admin:login' %}" style="display: inline-block; width: 100%; padding: 0.75rem 1rem; background-color: #2563eb; color: #fff; text-decoration: none; border-radius: 0.375rem; font-weight: 500;">
+      {% trans 'Log in again' %}
+    </a>
+  </div>
+</div>
+{% endblock %}
