@@ -49,33 +49,42 @@ def officer_login_view(request):
             error = "Invalid Station ID or Password."
     return render(request, 'login.html', {'error': error})
 
+# backend/portal/views.py
 
-# V V V V V  THE FIX IS HERE V V V V V
+
 def verify_2fa_view(request):
     error = None
+    # Get the 2FA data from the session without removing it.
+    correct_code = request.session.get('2fa_code')
+    user_id = request.session.get('2fa_user_id')
+
+    # If the session data doesn't exist for any reason, the user must start over.
+    if not correct_code or not user_id:
+        return redirect('login') 
+
     if request.method == 'POST':
         submitted_code = request.POST.get('code')
         
-        # Use .pop() to safely get and delete the keys from the session.
-        # This prevents crashes if the key doesn't exist (e.g., on a double-submit).
-        correct_code = request.session.pop('2fa_code', None)
-        user_id = request.session.pop('2fa_user_id', None)
-
-        if user_id and submitted_code == str(correct_code):
-            # If the keys existed and the code is correct, log the user in.
+        if submitted_code == str(correct_code):
+            # The code is correct. Log the user in.
             user = User.objects.get(id=user_id)
             login(request, user)
-            return redirect('dashboard')
-        elif user_id is None:
-            # If the keys were already gone, the user is likely already logged in.
-            # Redirect them to the dashboard to avoid confusion.
+
+            # IMPORTANT: Now that login is successful, clear the 2FA data from the session.
+            if '2fa_code' in request.session:
+                del request.session['2fa_code']
+            if '2fa_user_id' in request.session:
+                del request.session['2fa_user_id']
+            
             return redirect('dashboard')
         else:
-            # If the code was just wrong, show an error.
+            # The code was incorrect. Show an error and let the user try again on the same page.
             error = "Invalid verification code. Please try again."
             
     return render(request, 'verify_2fa.html', {'error': error})
-# ^ ^ ^ ^ ^  THE FIX IS HERE ^ ^ ^ ^ ^
+
+# ... (the rest of your views.py file)
+
 
 
 @login_required
