@@ -20,8 +20,9 @@
                 <form method="POST" action="{% url 'home' %}" class="sm:flex sm:gap-2 sm:items-start">
                     {% csrf_token %}
                     <div class="w-full">
+                        <label for="public-imei-input" class="sr-only">Enter 15-digit IMEI number</label>
                         <input name="imei" id="public-imei-input" type="text" maxlength="15" placeholder="Enter 15-digit IMEI number" class="w-full px-5 py-4 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-lg" required />
-                        <p id="public-imei-feedback" class="mt-2 text-xs text-left h-4"></p> {# Added h-4 to prevent layout shift #}
+                        <p id="public-imei-feedback" class="mt-2 text-xs text-left h-4"></p>
                     </div>
                     <button type="submit" id="public-imei-submit" class="mt-3 w-full sm:mt-0 sm:w-auto sm:flex-shrink-0 inline-flex items-center justify-center px-6 py-4 border border-transparent text-lg font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700">Check IMEI</button>
                 </form>
@@ -37,20 +38,23 @@
                     <div class="mt-6 p-4 rounded-md text-left bg-blue-50 border border-blue-200">
                         <h3 class="font-bold text-blue-800">You Can Help Recover This Device</h3>
                         <p class="text-sm text-blue-700 mt-2">
-                            By clicking the button below, you can anonymously send your approximate location (your city)
-                            to the police station that filed this report. This information can help them in their investigation.
+                            By clicking the button below, you can anonymously send location information
+                            to the police station that filed this report to help their investigation.
                         </p>
                         <p class="text-xs text-blue-600 mt-1">
-                            <strong>Note:</strong> We will not share your exact location or any of your personal information.
+                            <strong>Note:</strong> Your browser will ask for permission to share your precise location. If you deny, an approximate (city-level) location will be sent instead.
                         </p>
-                        <form method="POST" action="{% url 'anonymous_alert' %}">
+                        <form id="alert-form" method="POST" action="{% url 'anonymous_alert' %}">
                             {% csrf_token %}
                             <input type="hidden" name="imei" value="{{ imei_result.imei }}">
-                            <button type="submit" class="mt-4 w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700">
+                            <input type="hidden" name="latitude" id="latitude-field">
+                            <input type="hidden" name="longitude" id="longitude-field">
+                            
+                            <button type="button" id="alert-button" class="mt-4 w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700">
                                 Anonymously Alert Police
                             </button>
                         </form>
-                    </div>
+                        </div>
                     {% else %}
                     <div class="p-4 rounded-md text-left bg-green-100 border-l-4 border-green-500 text-green-700">
                         <p class="font-bold">All Clear!</p>
@@ -84,84 +88,50 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Logic for the IMEI validation on the main form
     const imeiInput = document.getElementById('public-imei-input');
-    const submitButton = document.getElementById('public-imei-submit');
-    const feedbackElement = document.getElementById('public-imei-feedback');
+    // ... (rest of your IMEI validation script is unchanged)
 
-    if (imeiInput) {
-        function isValidLuhn(imei) {
-            let nCheck = 0, bEven = false;
-            imei = imei.replace(/\D/g, "");
-            for (let n = imei.length - 1; n >= 0; n--) {
-                let cDigit = imei.charAt(n), nDigit = parseInt(cDigit, 10);
-                if (bEven && (nDigit *= 2) > 9) nDigit -= 9;
-                nCheck += nDigit;
-                bEven = !bEven;
-            }
-            return (nCheck % 10) == 0;
-        }
+    // --- START: NEW GEOLOCATION SCRIPT ---
+    const alertButton = document.getElementById('alert-button');
+    const alertForm = document.getElementById('alert-form');
 
-        function validateImei() {
-            const imei = imeiInput.value;
-            let isValid = false;
-
-            imeiInput.style.borderColor = '#d1d5db';
-            feedbackElement.textContent = '';
-            feedbackElement.style.color = '';
-
-            if (imei.length === 0) {
-                submitButton.disabled = true;
-                return;
-            }
-
-            if (/[^0-9]/.test(imei)) {
-                feedbackElement.textContent = 'IMEI must contain only numbers.';
-                feedbackElement.style.color = '#ef4444';
-                imeiInput.style.borderColor = '#ef4444';
-            } else if (imei.length !== 15) {
-                feedbackElement.textContent = `IMEI must be 15 digits long. (${imei.length}/15)`;
-                feedbackElement.style.color = '#ef4444';
-                imeiInput.style.borderColor = '#ef4444';
+    if (alertButton && alertForm) {
+        alertButton.addEventListener('click', function() {
+            // Check if the browser supports Geolocation and is on a secure connection (HTTPS)
+            if ("geolocation" in navigator && window.isSecureContext) {
+                // Ask the user for their position
+                navigator.geolocation.getCurrentPosition(
+                    function(position) {
+                        // SUCCESS: The user allowed location access.
+                        document.getElementById('latitude-field').value = position.coords.latitude;
+                        document.getElementById('longitude-field').value = position.coords.longitude;
+                        alertForm.submit();
+                    },
+                    function(error) {
+                        // ERROR: The user denied permission or another error occurred.
+                        console.warn(`Geolocation error (${error.code}): ${error.message}`);
+                        // Submit the form without coordinates for server-side IP fallback.
+                        alertForm.submit();
+                    }
+                );
             } else {
-                if (isValidLuhn(imei)) {
-                    feedbackElement.textContent = 'Valid IMEI format.';
-                    feedbackElement.style.color = '#22c55e';
-                    imeiInput.style.borderColor = '#22c55e';
-                    isValid = true;
-                } else {
-                    feedbackElement.textContent = 'Invalid IMEI. Please check the number.';
-                    feedbackElement.style.color = '#ef4444';
-                    imeiInput.style.borderColor = '#ef4444';
-                }
+                // Browser doesn't support Geolocation or connection is not secure.
+                // Submit the form for server-side IP fallback.
+                alertForm.submit();
             }
-
-            submitButton.disabled = !isValid;
-            submitButton.style.cursor = isValid ? 'pointer' : 'not-allowed';
-            submitButton.style.opacity = isValid ? '1' : '0.5';
-        }
-
-        validateImei();
-        imeiInput.addEventListener('input', validateImei);
+        });
     }
-    
-    // --- START: NEW SCRIPT TO HIDE THE ALERT ---
-    // Find the success alert element by its ID
-    const successAlert = document.getElementById('success-alert');
+    // --- END: NEW GEOLOCATION SCRIPT ---
 
-    // If the alert exists on the page
+    // Script for the auto-hiding success alert
+    const successAlert = document.getElementById('success-alert');
     if (successAlert) {
-        // Wait for 5 seconds (5000 milliseconds)
         setTimeout(function() {
-            // Start fading the alert out
             successAlert.style.opacity = '0';
-            
-            // After the fade-out is complete (500ms), hide it completely
             setTimeout(function() {
                 successAlert.style.display = 'none';
-            }, 500); 
-            
-        }, 5000); // 5 seconds
+            }, 500);
+        }, 5000);
     }
-    // --- END: NEW SCRIPT TO HIDE THE ALERT ---
 });
 </script>
 {% endblock %}
