@@ -1,18 +1,17 @@
-# portal/views.py
-
 from django.utils import timezone
 import random
 import datetime
+import ipaddress
+import requests
 from django.shortcuts import render, redirect, reverse
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.core.mail import send_mail
 from django.contrib.auth.models import User
+from django.http import HttpResponse
+from django.core.management import call_command
 from .models import DeviceReport
 from .forms import ReportStep1Form, ReportStep2Form, ReportStep3Form, ReportStep4Form
-from django.http import HttpResponse
-import requests
-from django.core.management import call_command
 
 def home_view(request):
     imei_result = None
@@ -158,52 +157,73 @@ def create_report_view(request, step):
     }
     return render(request, 'create_report.html', context)
 
+# ---------- UPDATED ANONYMOUS ALERT VIEW ----------
+def get_client_ip(request):
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        return x_forwarded_for.split(',')[0].strip()
+    return request.META.get('REMOTE_ADDR')
+
+def get_geo_location(ip):
+    try:
+        if ipaddress.ip_address(ip).is_private:
+            return "Local Network (no geolocation)"
+    except ValueError:
+        return "Unknown Location"
+
+    try:
+        token = "a1a23a3a62f37c"
+        r = requests.get(f"https://ipinfo.io/{ip}?token={token}", timeout=5)
+        if r.status_code == 200:
+            data = r.json()
+            parts = [p for p in [data.get('city'), data.get('region'), data.get('country')] if p]
+            if parts:
+                return ", ".join(parts)
+    except Exception:
+        pass
+
+    try:
+        r = requests.get(f"https://ipapi.co/{ip}/json/", timeout=5)
+        if r.status_code == 200:
+            data = r.json()
+            parts = [p for p in [data.get('city'), data.get('region'), data.get('country_name')] if p]
+            if parts:
+                return ", ".join(parts)
+    except Exception:
+        pass
+
+    return "Unknown Location"
+
 def anonymous_alert_view(request):
     if request.method == 'POST':
         imei = request.POST.get('imei')
-        if imei:
-            try:
-                report = DeviceReport.objects.get(imei=imei, status=DeviceReport.StatusChoices.STOLEN)
-                officer_email = report.reported_by.email
-                
-                x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-                if x_forwarded_for:
-                    ip = x_forwarded_for.split(',')[0]
-                else:
-                    ip = request.META.get('REMOTE_ADDR')
-                
-                location = "Unknown Location"
-                # --- START: UPDATED GEOLOCATION LOGIC ---
-                try:
-                    # NOTE: This is a public, free-tier token.
-                    token = 'a1a23a3a62f37c' 
-                    response = requests.get(f'https://ipinfo.io/{ip}?token={token}')
-                    if response.status_code == 200:
-                        data = response.json()
-                        city = data.get('city')
-                        region = data.get('region')
-                        country = data.get('country') # Note: field is 'country'
-                        if city and region and country:
-                            location = f"{city}, {region}, {country}"
-                except Exception:
-                    pass # If the location lookup fails, we still send the alert
-                # --- END: UPDATED GEOLOCATION LOGIC ---
+        if not imei:
+            return redirect('home')
 
-                subject = f"Anonymous Tip: Stolen Device (IMEI: {imei})"
-                message = (
-                    f"An anonymous user has reported that a device with the following IMEI was checked on the SafeIMEI platform:\n\n"
-                    f"IMEI: {imei}\n\n"
-                    f"The check was performed from an IP address located in or near:\n"
-                    f"{location}\n\n"
-                    f"This is an automated, informational alert to aid in your investigation."
-                )
-                send_mail(subject, message, 'noreply@safeimei.com', [officer_email], fail_silently=False)
-                
-                return redirect(f"{reverse('home')}?alert_success=True")
-            except DeviceReport.DoesNotExist:
-                return HttpResponse("Report not found.", status=404)
+        try:
+            report = DeviceReport.objects.get(imei=imei, status=DeviceReport.StatusChoices.STOLEN)
+        except DeviceReport.DoesNotExist:
+            return HttpResponse("Report not found.", status=404)
+
+        officer_email = report.reported_by.email
+        ip = get_client_ip(request)
+        location = get_geo_location(ip)
+
+        subject = f"Anonymous Tip: Stolen Device (IMEI: {imei})"
+        message = (
+            f"An anonymous user has reported that a device with the following IMEI was checked on SafeIMEI:\n\n"
+            f"IMEI: {imei}\n"
+            f"IP Address: {ip}\n"
+            f"Approx. Location: {location}\n\n"
+            f"This is an automated, informational alert to aid your investigation."
+        )
+        send_mail(subject, message, 'noreply@safeimei.com', [officer_email], fail_silently=False)
+
+        return redirect(f"{reverse('home')}?alert_success=True")
+
     return redirect('home')
-    
+# --------------------------------------------------
+
 def faq(request):
     return render(request, 'faq.html')
 
