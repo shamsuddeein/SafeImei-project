@@ -6,12 +6,12 @@
 <div class="page pt-16">
     {% if alert_success %}
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
-        <div class="p-4 rounded-md bg-green-100 border-l-4 border-green-500 text-green-700">
+        <div id="success-alert" class="p-4 rounded-md bg-green-100 border-l-4 border-green-500 text-green-700" style="transition: opacity 0.5s ease-out;">
             <p class="font-bold">Thank You!</p>
             <p>Your anonymous tip has been sent to the authorities. Your help is greatly appreciated.</p>
         </div>
     </div>
-{% endif %}
+    {% endif %}
     <header class="bg-white">
         <div class="max-w-7xl mx-auto py-20 px-4 sm:px-6 lg:px-8 text-center">
             <h1 class="text-4xl font-extrabold text-gray-900 sm:text-5xl md:text-6xl">Buy Used Phones with Confidence.</h1>
@@ -27,40 +27,38 @@
                 </form>
 
                 {% if imei_result %}
-             <div class="mt-6">
-                {% if imei_result.status == 'stolen' %}
-                <div class="p-4 rounded-md text-left bg-red-100 border-l-4 border-red-500 text-red-700">
-                    <p class="font-bold">Warning!</p>
-                    <p>{{ imei_result.message }}</p>
-                </div>
+                <div class="mt-6">
+                    {% if imei_result.status == 'stolen' %}
+                    <div class="p-4 rounded-md text-left bg-red-100 border-l-4 border-red-500 text-red-700">
+                        <p class="font-bold">Warning!</p>
+                        <p>{{ imei_result.message }}</p>
+                    </div>
 
-                <div class="mt-6 p-4 rounded-md text-left bg-blue-50 border border-blue-200">
-                    <h3 class="font-bold text-blue-800">You Can Help Recover This Device</h3>
-                    <p class="text-sm text-blue-700 mt-2">
-                        By clicking the button below, you can anonymously send your approximate location (your city)
-                        to the police station that filed this report. This information can help them in their investigation.
-                    </p>
-                    <p class="text-xs text-blue-600 mt-1">
-                        <strong>Note:</strong> We will not share your exact location or any of your personal information.
-                    </p>
-                    <form method="POST" action="{% url 'anonymous_alert' %}">
-                        {% csrf_token %}
-                        <input type="hidden" name="imei" value="{{ imei_result.imei }}">
-                        <button type="submit" class="mt-4 w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700">
-                            Anonymously Alert Police
-                        </button>
-                    </form>
-                </div>
-                {% else %}
-                <div class="p-4 rounded-md text-left bg-green-100 border-l-4 border-green-500 text-green-700">
-                    <p class="font-bold">All Clear!</p>
-                    <p>{{ imei_result.message }}</p>
+                    <div class="mt-6 p-4 rounded-md text-left bg-blue-50 border border-blue-200">
+                        <h3 class="font-bold text-blue-800">You Can Help Recover This Device</h3>
+                        <p class="text-sm text-blue-700 mt-2">
+                            By clicking the button below, you can anonymously send your approximate location (your city)
+                            to the police station that filed this report. This information can help them in their investigation.
+                        </p>
+                        <p class="text-xs text-blue-600 mt-1">
+                            <strong>Note:</strong> We will not share your exact location or any of your personal information.
+                        </p>
+                        <form method="POST" action="{% url 'anonymous_alert' %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="imei" value="{{ imei_result.imei }}">
+                            <button type="submit" class="mt-4 w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700">
+                                Anonymously Alert Police
+                            </button>
+                        </form>
+                    </div>
+                    {% else %}
+                    <div class="p-4 rounded-md text-left bg-green-100 border-l-4 border-green-500 text-green-700">
+                        <p class="font-bold">All Clear!</p>
+                        <p>{{ imei_result.message }}</p>
+                    </div>
+                    {% endif %}
                 </div>
                 {% endif %}
-            </div>
-            {% endif %}
-                
-
             </div>
         </div>
     </header>
@@ -84,63 +82,86 @@
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Logic for the IMEI validation on the main form
     const imeiInput = document.getElementById('public-imei-input');
     const submitButton = document.getElementById('public-imei-submit');
     const feedbackElement = document.getElementById('public-imei-feedback');
 
-    function isValidLuhn(imei) {
-        let nCheck = 0, bEven = false;
-        imei = imei.replace(/\D/g, "");
-        for (let n = imei.length - 1; n >= 0; n--) {
-            let cDigit = imei.charAt(n), nDigit = parseInt(cDigit, 10);
-            if (bEven && (nDigit *= 2) > 9) nDigit -= 9;
-            nCheck += nDigit;
-            bEven = !bEven;
-        }
-        return (nCheck % 10) == 0;
-    }
-
-    function validateImei() {
-        const imei = imeiInput.value;
-        let isValid = false;
-
-        imeiInput.style.borderColor = '#d1d5db';
-        feedbackElement.textContent = '';
-        feedbackElement.style.color = '';
-
-        if (imei.length === 0) {
-            submitButton.disabled = true;
-            return;
+    if (imeiInput) {
+        function isValidLuhn(imei) {
+            let nCheck = 0, bEven = false;
+            imei = imei.replace(/\D/g, "");
+            for (let n = imei.length - 1; n >= 0; n--) {
+                let cDigit = imei.charAt(n), nDigit = parseInt(cDigit, 10);
+                if (bEven && (nDigit *= 2) > 9) nDigit -= 9;
+                nCheck += nDigit;
+                bEven = !bEven;
+            }
+            return (nCheck % 10) == 0;
         }
 
-        if (/[^0-9]/.test(imei)) {
-            feedbackElement.textContent = 'IMEI must contain only numbers.';
-            feedbackElement.style.color = '#ef4444';
-            imeiInput.style.borderColor = '#ef4444';
-        } else if (imei.length !== 15) {
-            feedbackElement.textContent = `IMEI must be 15 digits long. (${imei.length}/15)`;
-            feedbackElement.style.color = '#ef4444';
-            imeiInput.style.borderColor = '#ef4444';
-        } else {
-            if (isValidLuhn(imei)) {
-                feedbackElement.textContent = 'Valid IMEI format.';
-                feedbackElement.style.color = '#22c55e';
-                imeiInput.style.borderColor = '#22c55e';
-                isValid = true;
-            } else {
-                feedbackElement.textContent = 'Invalid IMEI. Please check the number.';
+        function validateImei() {
+            const imei = imeiInput.value;
+            let isValid = false;
+
+            imeiInput.style.borderColor = '#d1d5db';
+            feedbackElement.textContent = '';
+            feedbackElement.style.color = '';
+
+            if (imei.length === 0) {
+                submitButton.disabled = true;
+                return;
+            }
+
+            if (/[^0-9]/.test(imei)) {
+                feedbackElement.textContent = 'IMEI must contain only numbers.';
                 feedbackElement.style.color = '#ef4444';
                 imeiInput.style.borderColor = '#ef4444';
+            } else if (imei.length !== 15) {
+                feedbackElement.textContent = `IMEI must be 15 digits long. (${imei.length}/15)`;
+                feedbackElement.style.color = '#ef4444';
+                imeiInput.style.borderColor = '#ef4444';
+            } else {
+                if (isValidLuhn(imei)) {
+                    feedbackElement.textContent = 'Valid IMEI format.';
+                    feedbackElement.style.color = '#22c55e';
+                    imeiInput.style.borderColor = '#22c55e';
+                    isValid = true;
+                } else {
+                    feedbackElement.textContent = 'Invalid IMEI. Please check the number.';
+                    feedbackElement.style.color = '#ef4444';
+                    imeiInput.style.borderColor = '#ef4444';
+                }
             }
+
+            submitButton.disabled = !isValid;
+            submitButton.style.cursor = isValid ? 'pointer' : 'not-allowed';
+            submitButton.style.opacity = isValid ? '1' : '0.5';
         }
 
-        submitButton.disabled = !isValid;
-        submitButton.style.cursor = isValid ? 'pointer' : 'not-allowed';
-        submitButton.style.opacity = isValid ? '1' : '0.5';
+        validateImei();
+        imeiInput.addEventListener('input', validateImei);
     }
+    
+    // --- START: NEW SCRIPT TO HIDE THE ALERT ---
+    // Find the success alert element by its ID
+    const successAlert = document.getElementById('success-alert');
 
-    validateImei();
-    imeiInput.addEventListener('input', validateImei);
+    // If the alert exists on the page
+    if (successAlert) {
+        // Wait for 5 seconds (5000 milliseconds)
+        setTimeout(function() {
+            // Start fading the alert out
+            successAlert.style.opacity = '0';
+            
+            // After the fade-out is complete (500ms), hide it completely
+            setTimeout(function() {
+                successAlert.style.display = 'none';
+            }, 500); 
+            
+        }, 5000); // 5 seconds
+    }
+    // --- END: NEW SCRIPT TO HIDE THE ALERT ---
 });
 </script>
 {% endblock %}
