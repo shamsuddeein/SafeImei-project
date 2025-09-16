@@ -13,7 +13,6 @@ from .forms import ReportStep1Form, ReportStep2Form, ReportStep3Form, ReportStep
 from django.http import HttpResponse
 import requests
 from django.core.management import call_command
-import logging
 
 def home_view(request):
     imei_result = None
@@ -186,8 +185,7 @@ def anonymous_alert_view(request):
                         country = data.get('country') # Note: field is 'country'
                         if city and region and country:
                             location = f"{city}, {region}, {country}"
-                except Exception as e:
-                    logging.error(f"Geolocation lookup for IP {ip} failed: {e}")
+                except Exception:
                     pass # If the location lookup fails, we still send the alert
                 # --- END: UPDATED GEOLOCATION LOGIC ---
 
