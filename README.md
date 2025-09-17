@@ -1,143 +1,163 @@
-SafeIMEI - National IMEI Verification Portal
-1. Project Introduction
+# SafeIMEI: National Stolen Phone Reporting Database
 
-SafeIMEI is a Django-based web application designed to combat mobile phone theft in Nigeria by providing a centralized, national database for reporting and verifying stolen devices. The platform serves two primary user groups: the general public and authorized police officers.
+**Live Demo:** [https://safeimei.onrender.com/](https://safeimei.onrender.com/)
 
-This project was developed as a submission for the 3MTT Cohort 3 Resilience Through Innovation Hackathon. It directly addresses the thematic areas of Economic & Financial Inclusion and Technology for Resilience by creating a safer second-hand mobile market and providing a robust tool to disrupt the cycle of theft.
-Problem Statement
+SafeIMEI is a tech enabled platform that builds societal resilience by directly disrupting the market for stolen mobile phones in Nigeria. It provides a centralized, official database for law enforcement to report stolen devices and a free, instant verification tool for the public to check a phone's status before buying.
 
-Every year, countless Nigerians lose their mobile phones to theft, leading to financial loss and a sense of insecurity. These stolen devices are often resold to unsuspecting buyers, perpetuating a criminal cycle. SafeIMEI tackles this problem by making it easy for the public to verify a device's status before purchase and by empowering law enforcement to track stolen phones effectively.
-2. Key Features
-For the Public
+---
 
-    Instant IMEI Check: A simple, free-to-use form on the homepage to check if a phone's IMEI has been reported as stolen.
+## 📑 Table of Contents
+- [The Problem](#-the-problem)
+- [Our Solution](#-our-solution)
+- [Key Features](#%EF%B8%8F-key-features)
+- [Tech Stack](#-tech-stack)
+- [Getting Started (Local Setup)](#%EF%B8%8F-getting-started-local-setup)
+- [Usage](#-usage)
+- [The Team](#%EF%B8%8F-the-team)
+- [License](#-license)
 
-    Real-time Validation: The IMEI input field provides live feedback on the format and validity of the entered number.
+---
 
-    Informational Pages: Comprehensive "About Us", "FAQ", and "Privacy Policy" pages to build user trust and explain the platform's mission and operation.
+## ❗ The Problem
+Phone theft is a pervasive issue in Nigeria. The thriving second-hand market allows stolen devices to be easily resold to unsuspecting buyers, fueling a cycle of crime.
 
-For Police Officers
+There is no centralized, reliable way for buyers to verify if a device has been reported stolen, putting them at financial and legal risk.
 
-    Secure Officer Portal: A protected, login-required portal for law enforcement personnel.
+---
 
-    Two-Factor Authentication (2FA): Secure login process that sends a 6-digit code to the officer's registered email, ensuring only authorized access.
+## 💡 Our Solution
+SafeIMEI tackles this problem with a two-pronged approach:
 
-    Live Data Dashboard: A dashboard displaying real-time statistics, including reports filed this month, reports pending review, and recently recovered devices for the officer's station.
+### A Secure Law Enforcement Portal
+A private, secure dashboard for authorized police officers to file, manage, and track official reports of stolen devices using their unique IMEI numbers.
 
-    Multi-Step Report Creation: An intuitive, multi-step form to file detailed reports for stolen devices, collecting owner, device, and incident information, along with proofs of ownership.
+### A Free Public IMEI Verification Tool
+A simple, public-facing website that allows anyone to instantly check an IMEI against the national database to see if it has been flagged as stolen.
 
-    View and Search Reports: A comprehensive table of all reports filed by the officer's station, with the ability to search by IMEI.
+> This approach de-incentivizes theft by making it much harder to sell stolen goods.
 
-3. Tech Stack
+---
 
-    Backend: Django
+## ⚙️ Key Features
 
-    Database: SQLite3 (for development)
+### Public-Facing Site
+- **Instant IMEI Check:** Check the status of any 15-digit IMEI number for free.
+- **Luhn Algorithm Validation:** Real-time validation on the input field to ensure the IMEI format is correct.
+- **Anonymous Alert:** If a checked IMEI is stolen, the user can anonymously send their approximate location to the reporting police station to aid investigation.
+- **Informational Pages:** About, FAQ, Contact, and Privacy Policy pages.
 
-    Frontend: HTML, Tailwind CSS, JavaScript
+### Officer Portal
+- **Secure Authentication:** Station ID and password login.
+- **Two-Factor Authentication (2FA):** A 6-digit code is sent to the officer's registered email for verification.
+- **Officer Dashboard:** A summary of station activity, including monthly reports and pending reviews.
+- **Multi-Step Report Creation:** An intuitive, multi-page form to guide officers through filing a new report.
+- **View & Search Reports:** A comprehensive list of all reports filed by the officer's station, with search functionality.
 
-    Environment Management: Pipenv
+---
 
-4. Prerequisites
+## 🧠 Tech Stack
+- **Backend:** Python, Django
+- **Frontend:** HTML, Tailwind CSS, Vanilla JavaScript
+- **Database:** PostgreSQL (Production), SQLite (Development)
+- **Deployment:** Render (via Gunicorn & Whitenoise)
+- **DevOps:** Pipenv for dependency management.
 
-Before you begin, ensure you have the following installed on your local machine:
+---
 
-    Python 3.12+
+## 🛠️ Getting Started (Local Setup)
 
-    Pipenv
+Follow these instructions to get the project running on your local machine.
 
-5. Local Setup and Installation
+### Prerequisites
+- Python 3.12+
+- Pipenv (`pip install pipenv`)
+- PostgreSQL installed and running *(optional, can use default SQLite)*
 
-Follow these steps to get the project running on your local machine.
-Step 1: Clone the Repository
+### Setup Instructions
 
-First, clone the project repository to your local machine.
-
+**Clone the repository:**
+```bash
 git clone https://github.com/shamsuddeein/SafeImei-project.git
 cd SafeImei-project/backend
+```
 
-Step 2: Install Dependencies with Pipenv
-
-This project uses Pipenv to manage dependencies. The Pipfile contains all the necessary packages. Run the following command to install them:
-
+**Install dependencies:**
+```bash
 pipenv install
-
-This command will create a new virtual environment for the project and install Django and its dependencies.
-Step 3: Activate the Virtual Environment
-
-To use the installed packages, you need to activate the pipenv shell:
-
 pipenv shell
+```
 
-Your command prompt should now be prefixed with the name of the virtual environment (e.g., (backend)).
-Step 4: Apply Database Migrations
+**Set up environment variables:**
+- Create a file named `.env` in the `backend/` directory.
+- Copy the contents of `.env.production` into it and modify the values for your local setup.
 
-The project uses a SQLite database, which is included in the repository for convenience. Run the migrate command to ensure the database schema is up to date with the models:
+**For local SQLite (easier setup):**
+- Comment out all the `DATABASE_*` variables and Django will default to `db.sqlite3`.
 
+**For local PostgreSQL:**
+```
+SECRET_KEY=your-super-secret-key-here
+DEBUG=True
+ALLOWED_HOSTS=.localhost,127.0.0.1
+
+# Your local PostgreSQL details
+DATABASE_NAME=safeimei_db
+DATABASE_USER=your_postgres_user
+DATABASE_PASSWORD=your_postgres_password
+DATABASE_HOST=localhost
+DATABASE_PORT=5432
+
+# Email settings for 2FA (can use console backend for dev)
+EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend
+# EMAIL_HOST=smtp.gmail.com
+# ... etc
+```
+
+**Run database migrations:**
+```bash
 python manage.py migrate
+```
 
-6. Create Superuser and Initial Data
-
-To access the Django admin and the officer portal, you need to create user accounts.
-Step 1: Create a Superuser
-
-The superuser has full access to the Django admin interface.
-
+**Create a superuser for admin access:**
+```bash
 python manage.py createsuperuser
+```
 
-Follow the prompts to create your superuser account.
-Step 2: Set Up Stations and Officer Profiles (via Admin)
+**Seed the database with demo data:**
+> This command creates stations for all Nigerian states, two officer accounts per station, and 100 sample device reports.
+```bash
+python manage.py seed_data
+```
 
-    Run the development server (see next section).
-
-    Navigate to http://127.0.0.1:8000/admin/.
-
-    Log in with your superuser credentials.
-
-    Create a Station:
-
-        Go to the "Stations" section and click "Add Station".
-
-        Create at least one station (e.g., Name: Kaduna Division, Location: Kaduna).
-
-    Create an Officer User:
-
-        Go to the "Users" section and click "Add User".
-
-        Create a new user. Make sure to provide a valid email address, as this will be used for 2FA. Set a password.
-
-    Create an Officer Profile:
-
-        Go to the "Officer Profiles" section and click "Add Officer Profile".
-
-        Link the user you just created to the station you created.
-
-7. Running the Application
-
-Once the setup is complete, you can run the local development server from the backend directory:
-
+**Run the development server:**
+```bash
 python manage.py runserver
+```
 
-The application will be available at http://127.0.0.1:8000/.
+> The application will be available at [http://127.0.0.1:8000/](http://127.0.0.1:8000/)
 
-    Public Portal: http://127.0.0.1:8000/
+---
 
-    Officer Login: http://127.0.0.1:8000/login/
+## 🚀 Usage
+- **Public Site:** Navigate to [http://127.0.0.1:8000/](http://127.0.0.1:8000/)
+- **Admin Panel:** Access the Django admin at [http://127.0.0.1:8000/admin/](http://127.0.0.1:8000/admin/) with your superuser credentials.
+- **Officer Portal:**
+  - Navigate to [http://127.0.0.1:8000/login/](http://127.0.0.1:8000/login/)
+  - Use one of the seeded demo accounts to log in.
+  - **Username:** `LAG01` *(or `FCT01`, `KAN02`, etc.)*
+  - **Password:** `password123`
+  - The 2FA code will be printed in your terminal/console since we configured the console email backend.
 
-    Django Admin: http://127.0.0.1:8000/admin/
+---
 
-8. Deployment Notes
+## 🧑‍💻 The Team
+This project was built for the **3MTT Cohort 3 Hackathon** by **Team SafeImei**:
 
-To deploy this application to a production server, the following changes are critical:
+- **SHAMSUDDEEN YUSUF** — Team Lead, Founder & Backend Developer
+- **FRIDAY AKASHIE EUGENE** — Project Manager
+- **SA’ADIYA ABDULLAHI** — Frontend Developer
 
-    SECRET_KEY: The SECRET_KEY in safeimei_project/settings.py must be replaced with a secure key loaded from an environment variable.
+---
 
-    DEBUG Mode: DEBUG must be set to False in settings.py for production.
-
-    ALLOWED_HOSTS: The domain name of your live site must be added to ALLOWED_HOSTS in settings.py.
-
-    Database: Switch from SQLite3 to a more robust database like PostgreSQL for production.
-
-    Static Files: Run python manage.py collectstatic and configure a web server (like Nginx) to serve the static files.
-
-    Email Backend: Configure a production-ready EMAIL_BACKEND in settings.py (e.g., using SendGrid, Mailgun) to send real 2FA emails.
+## 📜 License
+This project is licensed under the **MIT License**. See the `LICENSE` file for details.
