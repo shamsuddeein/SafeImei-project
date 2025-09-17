@@ -19,7 +19,15 @@ def home_view(request):
         imei = request.POST.get('imei')
         try:
             report = DeviceReport.objects.get(imei=imei, status=DeviceReport.StatusChoices.STOLEN)
-            imei_result = {'status': 'stolen', 'message': f'This device (IMEI: {imei}) has been reported stolen.', 'imei': imei}
+            # Get location data when a stolen IMEI is found
+            ip = get_client_ip(request)
+            location_data = get_geo_location(ip)
+            imei_result = {
+                'status': 'stolen', 
+                'message': f'This device (IMEI: {imei}) has been reported stolen.', 
+                'imei': imei,
+                'location': location_data, # Add location to the context
+            }
         except DeviceReport.DoesNotExist:
             imei_result = {'status': 'safe', 'message': f'This device (IMEI: {imei}) has not been reported stolen.'}
     
@@ -165,39 +173,47 @@ def get_client_ip(request):
     return request.META.get('REMOTE_ADDR')
 
 def get_geo_location(ip):
+    default_location = {"city": "Unknown", "country": "Unknown", "full": "Unknown Location"}
     try:
         if ipaddress.ip_address(ip).is_private:
-            return "Local Network (no geolocation)"
+            return {"city": "Local", "country": "Network", "full": "Local Network"}
     except ValueError:
-        return "Unknown Location"
-    # ipinfo first
+        return default_location
+    
+    # Try ipinfo.io first
     try:
         token = "a1a23a3a62f37c"  # replace with your token
         r = requests.get(f"https://ipinfo.io/{ip}?token={token}", timeout=5)
         if r.status_code == 200:
             data = r.json()
-            city = data.get('city')
-            region = data.get('region')
-            country = data.get('country')
-            parts = [p for p in [city, region, country] if p]
-            if parts:
-                return ", ".join(parts)
+            city = data.get('city', 'N/A')
+            region = data.get('region', 'N/A')
+            country = data.get('country', 'N/A')
+            return {
+                "city": city,
+                "country": country,
+                "full": f"{city}, {region}, {country}"
+            }
     except Exception:
         pass
-    # fallback ipapi
+        
+    # Fallback to ipapi.co
     try:
         r = requests.get(f"https://ipapi.co/{ip}/json/", timeout=5)
         if r.status_code == 200:
             data = r.json()
-            city = data.get('city')
-            region = data.get('region')
-            country = data.get('country_name')
-            parts = [p for p in [city, region, country] if p]
-            if parts:
-                return ", ".join(parts)
+            city = data.get('city', 'N/A')
+            country = data.get('country_name', 'N/A')
+            return {
+                "city": city,
+                "country": country,
+                "full": f"{city}, {country}"
+            }
     except Exception:
         pass
-    return "Unknown Location"
+
+    return default_location
+
 
 def anonymous_alert_view(request):
     if request.method == 'POST':
@@ -208,14 +224,14 @@ def anonymous_alert_view(request):
                 officer_email = report.reported_by.email
 
                 ip = get_client_ip(request)
-                location = get_geo_location(ip)
+                location_data = get_geo_location(ip)
 
                 subject = f"Anonymous Tip: Stolen Device (IMEI: {imei})"
                 message = (
                     f"An anonymous user has reported that a device with the following IMEI was checked on the SafeIMEI platform:\n\n"
                     f"IMEI: {imei}\n"
                     f"IP Address: {ip}\n"
-                    f"Approx. Location: {location}\n\n"
+                    f"Approx. Location: {location_data.get('full', 'Unknown')}\n\n"
                     f"This is an automated, informational alert to aid in your investigation."
                 )
                 send_mail(subject, message, 'noreply@safeimei.com', [officer_email], fail_silently=False)
@@ -244,3 +260,4 @@ def seed_database_view(request):
         return HttpResponse("<h1>Database Seeding Successful!</h1><p>The command has completed.</p>")
     except Exception as e:
         return HttpResponse(f"<h1>Error Seeding Database</h1><p>An error occurred: {e}</p>", status=500)
+

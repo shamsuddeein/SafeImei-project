@@ -37,7 +37,8 @@
                     <div class="mt-6 p-4 rounded-md text-left bg-blue-50 border border-blue-200">
                         <h3 class="font-bold text-blue-800">You Can Help Recover This Device</h3>
                         <p class="text-sm text-blue-700 mt-2">
-                            By clicking the button below, you can anonymously send your approximate location (your city)
+                            By clicking the button below, you can anonymously send your approximate location 
+                            (<strong class="font-semibold">{{ imei_result.location.city }}, {{ imei_result.location.country }}</strong>)
                             to the police station that filed this report. This information can help them in their investigation.
                         </p>
                         <p class="text-xs text-blue-600 mt-1">
@@ -165,3 +166,4 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 {% endblock %}
+
