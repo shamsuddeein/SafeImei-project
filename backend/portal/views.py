@@ -260,4 +260,3 @@ def seed_database_view(request):
         return HttpResponse("<h1>Database Seeding Successful!</h1><p>The command has completed.</p>")
     except Exception as e:
         return HttpResponse(f"<h1>Error Seeding Database</h1><p>An error occurred: {e}</p>", status=500)
-

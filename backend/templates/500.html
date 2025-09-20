@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block title %}Server Error - SafeIMEI{% endblock %}
+
+{% block content %}
+{% include 'partials/navbar_public.html' %}
+<div class="page pt-16 bg-white min-h-screen flex items-center justify-center">
+    <main class="max-w-xl mx-auto py-16 px-4 sm:px-6 lg:px-8 text-center">
+        <div class="text-blue-600 mb-4">
+            <svg class="h-16 w-16 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+            </svg>
+        </div>
+        <h1 class="text-4xl font-extrabold text-gray-900 sm:text-5xl">Server Error (500)</h1>
+        <p class="mt-4 text-xl text-gray-500">
+            We're sorry, but something went wrong on our end. Our team has been notified.
+        </p>
+        <div class="mt-10">
+            <a href="{% url 'home' %}" class="inline-flex items-center justify-center px-6 py-4 border border-transparent text-lg font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700">
+                Go Back Home
+            </a>
+        </div>
+    </main>
+</div>
+{% include 'partials/footer_public.html' %}
+{% endblock %}
