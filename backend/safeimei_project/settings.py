@@ -12,6 +12,15 @@ from pathlib import Path
 # Build paths inside the project
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+
+
+# --- ADD THESE LINES ---
+import africastalking
+AT_USERNAME = config('AT_USERNAME', default='sandbox')
+AT_API_KEY = config('AT_API_KEY', default='')
+# -----------------------
+
+
 # --- SECURITY ---
 SECRET_KEY = config('SECRET_KEY')
 DEBUG = config('DEBUG', default=False, cast=bool)
@@ -168,3 +177,4 @@ JAZZMIN_SETTINGS = {
         "sidebar_nav_flat_style": False,
     },
 }
+

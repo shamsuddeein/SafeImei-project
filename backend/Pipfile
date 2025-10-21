@@ -12,6 +12,7 @@ gunicorn = "*"
 whitenoise = "*"
 dj-database-url = "*"
 django-jazzmin = "*"
+africastalking = "*"
 
 [dev-packages]
 
