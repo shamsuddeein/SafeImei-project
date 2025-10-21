@@ -1,5 +1,5 @@
 -i https://pypi.org/simple
-# africastalking==2.0.1; python_version >= '3.8'
+africastalking==2.0.1; python_version >= '3.8'
 asgiref==3.10.0; python_version >= '3.9'
 certifi==2025.10.5; python_version >= '3.7'
 charset-normalizer==3.4.4; python_version >= '3.7'
