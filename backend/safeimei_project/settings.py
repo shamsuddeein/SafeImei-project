@@ -15,9 +15,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 # --- ADD THESE LINES ---
-# import africastalking
-# AT_USERNAME = config('AT_USERNAME', default='sandbox')
-# AT_API_KEY = config('AT_API_KEY', default='')
+import africastalking
+AT_USERNAME = config('AT_USERNAME', default='sandbox')
+AT_API_KEY = config('AT_API_KEY', default='')
 # -----------------------
 
 
