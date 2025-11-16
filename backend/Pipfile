@@ -14,6 +14,7 @@ dj-database-url = "*"
 django-jazzmin = "*"
 africastalking = "*"
 django-anymail = {extras = ["brevo"], version = "*"}
+resend = "*"
 
 [dev-packages]
 

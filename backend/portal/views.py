@@ -72,6 +72,17 @@ def officer_login_view(request):
                     [user.email],
                     fail_silently=False
                 )
+
+
+                # send_mail(
+                # 'Your SafeIMEI Login Code',
+                # f'Your verification code is: {code}',
+                # "SafeIMEI <9bb6fe001@smtp-brevo.com>",
+                #  [user.email],
+                # fail_silently=False
+                # )
+
+
                 return redirect('verify_2fa')
             except BadHeaderError:
                 logger.error(f"Invalid header while sending email for {username}")
