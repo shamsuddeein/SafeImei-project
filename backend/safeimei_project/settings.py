@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'portal.apps.PortalConfig',
+    'anymail',
 ]
 
 # --- MIDDLEWARE ---
@@ -122,6 +123,14 @@ EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default=EMAIL_HOST_USER)
 
+# # --- EMAIL (Using Anymail and Brevo API) ---
+# EMAIL_BACKEND = "anymail.backends.brevo.EmailBackend"
+
+# ANYMAIL = {
+#     "BREVO_API_KEY": config("BREVO_API_KEY"),
+# }
+
+# DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='noreply@safeimei.com')
 
 # --- ERROR HANDLERS ---
 HANDLER404 = "portal.views.custom_404_view"

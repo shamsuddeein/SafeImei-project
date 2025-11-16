@@ -7,12 +7,13 @@ name = "pypi"
 django = "*"
 psycopg2-binary = "*"
 python-decouple = "*"
-"django-anymail[mailgun]" = "*"
+"django-anymail[brevo]" = "*"
 gunicorn = "*"
 whitenoise = "*"
 dj-database-url = "*"
 django-jazzmin = "*"
 africastalking = "*"
+django-anymail = {extras = ["brevo"], version = "*"}
 
 [dev-packages]
 
