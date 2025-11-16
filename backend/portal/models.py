@@ -13,7 +13,6 @@ class Station(models.Model):
 class OfficerProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     station = models.ForeignKey(Station, on_delete=models.PROTECT)
-    phone_number = models.CharField(max_length=20, blank=True, null=True, help_text="Officer's phone number for 2FA (e.g., +234...)")
 
     def __str__(self):
         return self.user.username
