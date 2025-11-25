@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block title %}Payment Failed - SafeIMEI{% endblock %}
+
+{% block content %}
+{% include 'partials/navbar_public.html' %}
+<div class="page pt-16 bg-white min-h-screen flex items-center justify-center">
+    <main class="max-w-xl mx-auto py-16 px-4 sm:px-6 lg:px-8 text-center">
+        <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-100 mb-6">
+            <svg class="h-10 w-10 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        </div>
+        <h1 class="text-3xl font-extrabold text-gray-900">Payment Failed</h1>
+        <p class="mt-2 text-lg text-gray-500">We could not verify your payment. Your report has not been submitted.</p>
+        <div class="mt-10">
+            <a href="{% url 'public_report' %}" class="text-blue-600 hover:text-blue-500 font-medium">Try Again</a>
+        </div>
+    </main>
+</div>
+{% include 'partials/footer_public.html' %}
+{% endblock %}

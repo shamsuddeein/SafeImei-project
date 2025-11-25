@@ -43,22 +43,44 @@ document.addEventListener('DOMContentLoaded', function() {
     const inputs = otpContainer.querySelectorAll('.otp-input');
     const hiddenInput = document.getElementById('id_code');
 
-    // Focus the first input on page load
+    // 1. Focus first input on load
     if (inputs.length > 0) {
         inputs[0].focus();
     }
 
+    // 2. Handle Paste Event (The "Pro" Feature)
+    otpContainer.addEventListener('paste', function(e) {
+        e.preventDefault();
+        const pasteData = (e.clipboardData || window.clipboardData).getData('text');
+        
+        // clean data to only keep numbers
+        const cleanData = pasteData.replace(/\D/g, '').slice(0, 6); 
+
+        cleanData.split('').forEach((char, index) => {
+            if (inputs[index]) {
+                inputs[index].value = char;
+            }
+        });
+        
+        // Focus the next empty input or the last one
+        const nextIndex = cleanData.length;
+        if (inputs[nextIndex]) {
+            inputs[nextIndex].focus();
+        } else {
+            inputs[5].focus(); 
+        }
+    });
+
+    // 3. Handle Typing
     otpContainer.addEventListener('input', function(e) {
         const target = e.target;
         const value = target.value;
 
-        // Ensure only numbers are entered
         if (isNaN(value)) {
             target.value = '';
             return;
         }
 
-        // Move to the next input if a digit is entered
         if (value !== '') {
             const next = target.nextElementSibling;
             if (next && next.tagName === 'INPUT') {
@@ -67,9 +89,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    // 4. Handle Backspace
     otpContainer.addEventListener('keydown', function(e) {
         const target = e.target;
-        // Move to the previous input on backspace if the current input is empty
         if (e.key === 'Backspace' || e.key === 'Delete') {
             if (target.value === '') {
                 const prev = target.previousElementSibling;
@@ -80,7 +102,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Before submitting the form, combine the digits into the hidden input
+    // 5. Combine on Submit
     form.addEventListener('submit', function(e) {
         let otp = '';
         inputs.forEach(input => {

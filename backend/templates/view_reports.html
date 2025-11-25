@@ -32,6 +32,7 @@
                                         <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Device</th>
                                         <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Date Reported</th>
                                         <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Status</th>
+                                        <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6"><span class="sr-only">Actions</span></th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-gray-200 bg-white">
@@ -42,15 +43,28 @@
                                         <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ report.created_at|date:"Y-m-d" }}</td>
                                         <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                                             {% if report.status == 'Stolen' %}
-                                            <span class="inline-flex rounded-full px-2 text-xs font-semibold leading-5 bg-red-100 text-red-800">{{ report.status }}</span>
+                                                <span class="inline-flex rounded-full px-2 text-xs font-semibold leading-5 bg-red-100 text-red-800">Stolen</span>
+                                            {% elif report.status == 'Recovered' %}
+                                                <span class="inline-flex rounded-full px-2 text-xs font-semibold leading-5 bg-green-100 text-green-800">Recovered</span>
+                                            {% elif report.status == 'Pending' %}
+                                                <span class="inline-flex rounded-full px-2 text-xs font-semibold leading-5 bg-yellow-100 text-yellow-800">Pending Review</span>
                                             {% else %}
-                                            <span class="inline-flex rounded-full px-2 text-xs font-semibold leading-5 bg-green-100 text-green-800">{{ report.status }}</span>
+                                                <span class="inline-flex rounded-full px-2 text-xs font-semibold leading-5 bg-gray-100 text-gray-800">{{ report.status }}</span>
                                             {% endif %}
+                                        </td>
+                                        <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+                                            <a href="{% url 'report_detail' report.id %}" class="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-4 font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                                {% if report.status == 'Pending' %}
+                                                    Review
+                                                {% else %}
+                                                    Manage
+                                                {% endif %}
+                                            </a>
                                         </td>
                                     </tr>
                                     {% empty %}
                                     <tr>
-                                        <td colspan="4" class="text-center text-gray-500 py-10">No reports found for this station.</td>
+                                        <td colspan="5" class="text-center text-gray-500 py-10">No reports found for this station.</td>
                                     </tr>
                                     {% endfor %}
                                 </tbody>

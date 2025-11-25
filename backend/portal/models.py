@@ -22,6 +22,7 @@ class DeviceReport(models.Model):
         STOLEN = 'Stolen', 'Stolen'
         RECOVERED = 'Recovered', 'Recovered'
         PENDING = 'Pending', 'Pending Review'
+        PAYMENT_PENDING = 'Payment Pending', 'Awaiting Payment' # <--- NEW STATUS
 
     # Step 1: Owner Info
     owner_full_name = models.CharField(max_length=255)

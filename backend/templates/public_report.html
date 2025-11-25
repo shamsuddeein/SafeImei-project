@@ -1,0 +1,179 @@
+ {% extends 'base.html' %}
+{% block title %}Report Stolen Device - SafeIMEI{% endblock %}
+
+{% block content %}
+{% include 'partials/navbar_public.html' %}
+
+<div class="page pt-16 bg-gray-50 min-h-screen">
+    <div class="max-w-3xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+        <div class="bg-white py-8 px-6 shadow-lg rounded-lg sm:px-10 border-t-4 border-blue-600">
+            <div class="mb-8 text-center">
+                <h1 class="text-3xl font-bold text-gray-900">Report a Stolen Device</h1>
+                
+                <div class="mt-6 bg-blue-50 border border-blue-200 rounded-md p-4 text-left">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <svg class="h-5 w-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <h3 class="text-sm font-medium text-blue-800">Verification Fee Required</h3>
+                            <div class="mt-2 text-sm text-blue-700">
+                                <p>To prevent spam and maintain database integrity, a <strong>Non-Refundable Verification Fee of ₦1,000</strong> is required to submit this report.</p>
+                                <p class="mt-1 font-bold">Please ensure you have a valid ID and clear Receipt before proceeding. Rejected reports will not be refunded.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <form method="POST" enctype="multipart/form-data" class="space-y-6">
+                {% csrf_token %}
+                
+                {% if form.non_field_errors %}
+                <div class="bg-red-50 border-l-4 border-red-400 p-4 mb-4">
+                    <div class="flex">
+                        <div class="ml-3">
+                            <p class="text-sm text-red-700">{{ form.non_field_errors.0 }}</p>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% for field in form %}
+                <div>
+                    <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                        {{ field.label }} {% if field.field.required %}<span class="text-red-500">*</span>{% endif %}
+                    </label>
+                    <div class="mt-1">
+                        {% if field.name == 'terms' %}
+                            <div class="flex items-start">
+                                <div class="flex items-center h-5">
+                                    {{ field }}
+                                </div>
+                                <div class="ml-3 text-sm">
+                                    <label for="{{ field.id_for_label }}" class="font-medium text-gray-700">{{ field.label }}</label>
+                                </div>
+                            </div>
+                        {% else %}
+                            {{ field }}
+                        {% endif %}
+                    </div>
+
+                    {# --- START: Added specific feedback container for IMEI --- #}
+                    {% if field.name == 'imei' %}
+                        <p id="imei-feedback" class="mt-1 text-xs font-medium h-4"></p>
+                    {% endif %}
+                    {# --- END --- #}
+
+                    {% if field.help_text and field.name != 'terms' %}
+                    <p class="mt-2 text-xs text-gray-500">{{ field.help_text }}</p>
+                    {% endif %}
+                    {% if field.errors %}
+                    <p class="mt-2 text-xs text-red-600 font-medium">{{ field.errors.as_text }}</p>
+                    {% endif %}
+                </div>
+                {% endfor %}
+
+                <div class="pt-4">
+                    {# --- Updated Button Text --- #}
+                    <button type="submit" id="submit-button" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+                        Proceed to Payment (₦1,000)
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% include 'partials/footer_public.html' %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const imeiInput = document.getElementById('id_imei');
+    const submitButton = document.getElementById('submit-button');
+
+    if (imeiInput) {
+        const imeiFeedback = document.getElementById('imei-feedback');
+
+        // Luhn Algorithm to check if IMEI is mathematically valid
+        function isValidLuhn(imei) {
+            let nCheck = 0, bEven = false;
+            imei = imei.replace(/\D/g, "");
+            for (let n = imei.length - 1; n >= 0; n--) {
+                let cDigit = imei.charAt(n), nDigit = parseInt(cDigit, 10);
+                if (bEven && (nDigit *= 2) > 9) nDigit -= 9;
+                nCheck += nDigit;
+                bEven = !bEven;
+            }
+            return (nCheck % 10) == 0;
+        }
+
+        function validateImei() {
+            const imei = imeiInput.value;
+            let isValid = false;
+
+            // Reset styles
+            imeiInput.style.borderColor = '#d1d5db'; // gray-300
+            imeiInput.classList.remove('focus:border-red-500', 'focus:ring-red-500', 'focus:border-green-500', 'focus:ring-green-500');
+            
+            if (imeiFeedback) {
+                imeiFeedback.textContent = '';
+                imeiFeedback.style.color = '';
+            }
+
+            if (imei.length === 0) {
+                // Allow empty (don't show error yet), but disable button
+                submitButton.disabled = true;
+                submitButton.style.opacity = '0.5';
+                submitButton.style.cursor = 'not-allowed';
+                return;
+            }
+
+            if (/[^0-9]/.test(imei)) {
+                if(imeiFeedback) {
+                    imeiFeedback.textContent = 'IMEI must contain only numbers.';
+                    imeiFeedback.style.color = '#ef4444'; // red-500
+                }
+                imeiInput.style.borderColor = '#ef4444';
+            } else if (imei.length < 15) {
+                if(imeiFeedback) {
+                    imeiFeedback.textContent = `IMEI must be 15 digits long. (${imei.length}/15)`;
+                    imeiFeedback.style.color = '#ef4444';
+                }
+                imeiInput.style.borderColor = '#ef4444';
+            } else if (imei.length === 15) {
+                if (isValidLuhn(imei)) {
+                    if(imeiFeedback) {
+                        imeiFeedback.textContent = 'Valid IMEI format.';
+                        imeiFeedback.style.color = '#22c55e'; // green-500
+                    }
+                    imeiInput.style.borderColor = '#22c55e';
+                    isValid = true;
+                } else {
+                    if(imeiFeedback) {
+                        imeiFeedback.textContent = 'Invalid IMEI checksum. Please check the number.';
+                        imeiFeedback.style.color = '#ef4444';
+                    }
+                    imeiInput.style.borderColor = '#ef4444';
+                }
+            }
+
+            // Toggle button state
+            submitButton.disabled = !isValid;
+            submitButton.style.cursor = isValid ? 'pointer' : 'not-allowed';
+            submitButton.style.opacity = isValid ? '1' : '0.5';
+        }
+
+        // Run on load (in case of browser auto-fill)
+        validateImei();
+        
+        // Run on input
+        imeiInput.addEventListener('input', validateImei);
+    }
+});
+</script>
+{% endblock %}
