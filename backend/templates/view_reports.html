@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% block title %}Station Reports{% endblock %}
+{% block title %}Agency Reports{% endblock %}
 
 {% block content %}
 <div class="min-h-screen bg-gray-100">
@@ -13,7 +13,7 @@
                 </a>
             </div>
             <div class="sm:flex sm:items-center sm:justify-between">
-                <h1 class="text-2xl font-semibold text-gray-900">Station Reports</h1>
+                <h1 class="text-2xl font-semibold text-gray-900">Agency Reports</h1>
                 <div class="mt-4 sm:mt-0">
                     <form method="GET" class="flex gap-2">
                         <input type="search" name="search" placeholder="Search by IMEI..." value="{{ request.GET.search }}" class="w-full sm:w-auto px-3 py-2 border border-gray-300 rounded-md shadow-sm">
@@ -64,7 +64,7 @@
                                     </tr>
                                     {% empty %}
                                     <tr>
-                                        <td colspan="5" class="text-center text-gray-500 py-10">No reports found for this station.</td>
+                                        <td colspan="5" class="text-center text-gray-500 py-10">No reports found for this agency.</td>
                                     </tr>
                                     {% endfor %}
                                 </tbody>

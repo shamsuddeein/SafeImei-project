@@ -1,4 +1,4 @@
-# portal/models.py
+# backend/portal/models.py
 
 from django.db import models
 from django.contrib.auth.models import User
@@ -11,6 +11,8 @@ class Station(models.Model):
         return self.name
 
 class OfficerProfile(models.Model):
+    # We keep the internal class name as OfficerProfile to avoid breaking the database,
+    # but in the frontend, we refer to them as "Agents".
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     station = models.ForeignKey(Station, on_delete=models.PROTECT)
 
@@ -22,7 +24,7 @@ class DeviceReport(models.Model):
         STOLEN = 'Stolen', 'Stolen'
         RECOVERED = 'Recovered', 'Recovered'
         PENDING = 'Pending', 'Pending Review'
-        PAYMENT_PENDING = 'Payment Pending', 'Awaiting Payment' # <--- NEW STATUS
+        PAYMENT_PENDING = 'Payment Pending', 'Awaiting Payment'
 
     # Step 1: Owner Info
     owner_full_name = models.CharField(max_length=255)
@@ -43,10 +45,14 @@ class DeviceReport(models.Model):
     incident_type = models.CharField(max_length=100)
     incident_location = models.TextField(blank=True, null=True)
 
-    # Step 4: Proofs (File uploads will be handled in the form)
-    owner_id_proof = models.FileField(upload_to='proofs/ids/', blank=True, null=True)
+    # Step 4: Proofs & Verification (UPDATED)
+    # We replaced 'owner_id_proof' with 'police_report_image'
+    police_report_image = models.FileField(upload_to='proofs/police_reports/', blank=True, null=True)
     device_carton_photo = models.FileField(upload_to='proofs/cartons/', blank=True, null=True)
     device_receipt = models.FileField(upload_to='proofs/receipts/', blank=True, null=True)
+    
+    # New: OCR Status
+    ocr_verification_status = models.BooleanField(default=False, help_text="True if OCR verified the documents")
 
     # Step 5: Final
     transaction_ref = models.CharField(max_length=100)

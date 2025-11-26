@@ -8,7 +8,7 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
         <div id="success-alert" class="p-4 rounded-md bg-green-100 border-l-4 border-green-500 text-green-700" style="transition: opacity 0.5s ease-out;">
             <p class="font-bold">Thank You!</p>
-            <p>Your anonymous tip has been sent to the authorities. Your help is greatly appreciated.</p>
+            <p>Your anonymous tip has been sent to our agents. Your help is greatly appreciated.</p>
         </div>
     </div>
     {% endif %}
@@ -43,12 +43,12 @@
                         <p>{{ imei_result.message }}</p>
                     </div>
 
-                    <!-- <div class="mt-6 p-4 rounded-md text-left bg-blue-50 border border-blue-200">
+                    <div class="mt-6 p-4 rounded-md text-left bg-blue-50 border border-blue-200">
                         <h3 class="font-bold text-blue-800">You Can Help Recover This Device</h3>
                         <p class="text-sm text-blue-700 mt-2">
                             By clicking the button below, you can anonymously send your approximate location 
                             (<strong class="font-semibold">{{ imei_result.location.city }}, {{ imei_result.location.country }}</strong>)
-                            to the police station that filed this report. This information can help them in their investigation.
+                            to the verification agents handling this report. This information can help them in their investigation.
                         </p>
                         <p class="text-xs text-blue-600 mt-1">
                             <strong>Note:</strong> We will not share your exact location or any of your personal information.
@@ -57,10 +57,10 @@
                             {% csrf_token %}
                             <input type="hidden" name="imei" value="{{ imei_result.imei }}">
                             <button type="submit" class="mt-4 w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700">
-                                Anonymously Alert Police
+                                Anonymously Alert Agents
                             </button>
                         </form>
-                    </div> -->
+                    </div>
                     {% else %}
                     <div class="p-4 rounded-md text-left bg-green-100 border-l-4 border-green-500 text-green-700">
                         <p class="font-bold">All Clear!</p>
@@ -85,15 +85,15 @@
                     <div class="text-4xl mb-4">1.</div>
                     <h3 class="text-xl font-bold text-gray-900">Report Online</h3>
                     <p class="mt-2 text-gray-500">
-                        Victims report their stolen device directly on this website by uploading proof of ownership and a valid ID.
+                        Victims report their stolen device directly on this website by uploading proof of ownership and a valid Incident Report.
                     </p>
                 </div>
 
                 <div class="text-center p-6 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
                     <div class="text-4xl mb-4">2.</div>
-                    <h3 class="text-xl font-bold text-gray-900">Officer Verification</h3>
+                    <h3 class="text-xl font-bold text-gray-900">Agent Verification</h3>
                     <p class="mt-2 text-gray-500">
-                        Our partner police officers review the evidence. Once verified, the IMEI is added to the National Blacklist.
+                        Our specialized agents review the evidence. Once verified, the IMEI is added to the National Blacklist.
                     </p>
                 </div>
 
@@ -115,7 +115,6 @@
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Logic for the IMEI validation on the main form
     const imeiInput = document.getElementById('public-imei-input');
     const submitButton = document.getElementById('public-imei-submit');
     const feedbackElement = document.getElementById('public-imei-feedback');
@@ -176,7 +175,6 @@ document.addEventListener('DOMContentLoaded', function() {
         imeiInput.addEventListener('input', validateImei);
     }
     
-    // Script to hide the success alert after 5 seconds
     const successAlert = document.getElementById('success-alert');
     if (successAlert) {
         setTimeout(function() {

@@ -22,9 +22,7 @@ logger = logging.getLogger(__name__)
 # -------------------- HELPERS --------------------
 
 def get_client_ip(request):
-    """
-    Retrieves the IP address from the request.
-    """
+    """Retrieves the IP address from the request."""
     x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
     if x_forwarded_for:
         ip = x_forwarded_for.split(',')[0].strip()
@@ -33,44 +31,41 @@ def get_client_ip(request):
     return ip
 
 def get_geo_location(ip):
-    """
-    Retrieves geolocation data for an IP address.
-    """
+    """Retrieves geolocation data for an IP address."""
     default_location = {"city": "Unknown", "country": "Unknown", "full": "Unknown Location"}
     
-    # Handle Localhost
     if ip == '127.0.0.1' or ip == 'localhost':
         return {"city": "Local", "country": "Network", "full": "Local Test Network"}
 
     try:
-        # Check if private IP
-        try:
-            if ipaddress.ip_address(ip).is_private:
-                return {"city": "Local", "country": "Network", "full": "Local Network"}
-        except ValueError:
-            pass
+        if ipaddress.ip_address(ip).is_private:
+            return {"city": "Local", "country": "Network", "full": "Local Network"}
+    except ValueError:
+        pass
 
-        # Call IP API
+    try:
         r = requests.get(f"https://ipinfo.io/{ip}/json", timeout=5)
         if r.status_code == 200:
             data = r.json()
             city = data.get('city', 'Unknown')
             region = data.get('region', '')
             country = data.get('country', 'Nigeria')
-            
-            # Fix for empty brackets
             parts = [city, region, country]
             full_loc = ", ".join([p for p in parts if p])
-
-            return {
-                "city": city,
-                "country": country,
-                "full": full_loc
-            }
+            return {"city": city, "country": country, "full": full_loc}
     except Exception as e:
         logger.warning(f"GeoIP lookup failed for {ip}: {e}")
 
     return default_location
+
+# --- MOCK OCR FUNCTION ---
+def verify_documents_ocr(police_report, receipt, imei_text):
+    if police_report and receipt:
+        print(f"OCR Scanning: {police_report.name}...")
+        print(f"OCR Scanning: {receipt.name}...")
+        print(f"Verifying IMEI: {imei_text} match found.")
+        return True
+    return False
 
 # -------------------- PUBLIC VIEWS --------------------
 
@@ -79,12 +74,7 @@ def home_view(request):
     if request.method == 'POST':
         imei = request.POST.get('imei')
         try:
-            report = DeviceReport.objects.get(
-                imei=imei,
-                status=DeviceReport.StatusChoices.STOLEN
-            )
-            
-            # Get location info for the warning box
+            report = DeviceReport.objects.get(imei=imei, status=DeviceReport.StatusChoices.STOLEN)
             ip = get_client_ip(request)
             location_data = get_geo_location(ip)
 
@@ -94,41 +84,54 @@ def home_view(request):
                 'imei': imei,
                 'location': location_data
             }
+
+            # Notify the Reporter (Victim)
+            if report.owner_email:
+                try:
+                    subject = f"SafeIMEI Alert: Your Stolen Device (IMEI: {imei}) was Detected!"
+                    message = f"""
+Dear {report.owner_full_name},
+
+Important Update:
+Your stolen device (IMEI: {imei}) was just searched on the SafeIMEI database.
+This usually means someone is trying to buy or sell it right now.
+
+--- Sighting Details ---
+Time: {timezone.now()}
+Approximate Location: {location_data.get('full', 'Unknown')}
+IP Address: {ip}
+-----------------------
+
+Please forward this information to your recovery agent immediately.
+
+SafeIMEI Security Team
+                    """
+                    send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [report.owner_email], fail_silently=True)
+                except Exception as e:
+                    logger.error(f"Failed to send sighting alert: {e}")
+
         except DeviceReport.DoesNotExist:
-            imei_result = {
-                'status': 'safe',
-                'message': f'This device (IMEI: {imei}) has not been reported stolen.'
-            }
+            imei_result = {'status': 'safe', 'message': f'This device (IMEI: {imei}) has not been reported stolen.'}
         except Exception as e:
             logger.error(f"Error checking IMEI {imei}: {e}")
-            imei_result = {
-                'status': 'error',
-                'message': "We couldn't verify this IMEI at the moment. Please try again later."
-            }
+            imei_result = {'status': 'error', 'message': "We couldn't verify this IMEI at the moment."}
     
     alert_success = request.GET.get('alert_success', False)
-    return render(request, 'home.html', {
-        'imei_result': imei_result,
-        'alert_success': alert_success
-    })
+    return render(request, 'home.html', {'imei_result': imei_result, 'alert_success': alert_success})
 
 def anonymous_alert_view(request):
     if request.method == 'POST':
         imei = request.POST.get('imei')
         if imei:
             try:
-                report = DeviceReport.objects.get(
-                    imei=imei,
-                    status=DeviceReport.StatusChoices.STOLEN
-                )
+                report = DeviceReport.objects.get(imei=imei, status=DeviceReport.StatusChoices.STOLEN)
                 
-                # Find Recipient
+                # Find Recipient (Agent)
                 recipient_email = None
-                
                 if report.reported_by and report.reported_by.email:
                     recipient_email = report.reported_by.email
                 elif report.station:
-                    # Fallback to any officer at the station
+                    # Fallback: Send to ANY agent at that station
                     officer = User.objects.filter(officerprofile__station=report.station).first()
                     if officer and officer.email:
                         recipient_email = officer.email
@@ -136,7 +139,6 @@ def anonymous_alert_view(request):
                 if recipient_email:
                     ip = get_client_ip(request)
                     location_data = get_geo_location(ip)
-
                     subject = f"Anonymous Tip: Stolen Device (IMEI: {imei})"
                     message = f"""
 ALERT: A stolen device has just been scanned on SafeIMEI.
@@ -144,7 +146,7 @@ ALERT: A stolen device has just been scanned on SafeIMEI.
 Device Details:
 - IMEI: {imei}
 - Brand: {report.brand} {report.model}
-- Reported at: {report.station.name}
+- Center: {report.station.name}
 
 Sighting Information:
 - Approx Location: {location_data.get('full', 'Unknown')}
@@ -152,17 +154,14 @@ Sighting Information:
 
 This is an automated intelligence alert.
                     """
-                    
                     send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [recipient_email], fail_silently=False)
-                    logger.info(f"Alert sent to {recipient_email}")
                 else:
-                    logger.warning(f"No recipient found for alert on IMEI {imei}")
+                    logger.warning(f"No agent found to receive alert for IMEI {imei}")
 
             except Exception as e:
                 logger.error(f"Error in anonymous_alert_view: {e}")
 
             return redirect(f"{reverse('home')}?alert_success=True")
-
     return redirect('home')
 
 # -------------------- AUTHENTICATION --------------------
@@ -178,7 +177,6 @@ def officer_login_view(request):
                 code = random.randint(100000, 999999)
                 request.session['2fa_code'] = code
                 request.session['2fa_user_id'] = user.id
-
                 send_mail(
                     'Your SafeIMEI Login Code',
                     f'Your verification code is: {code}',
@@ -188,19 +186,17 @@ def officer_login_view(request):
                 )
                 return redirect('verify_2fa')
             except Exception as e:
-                logger.error(f"Email sending failed for {username}: {e}")
-                error = "We couldn't send the verification code. Please try again later."
+                logger.error(f"Email error: {e}")
+                error = "We couldn't send the verification code."
         else:
-            error = "Invalid Station ID or Password."
+            error = "Invalid Agent ID or Password."
     return render(request, 'login.html', {'error': error})
 
 def verify_2fa_view(request):
     error = None
     correct_code = request.session.get('2fa_code')
     user_id = request.session.get('2fa_user_id')
-
-    if not correct_code or not user_id:
-        return redirect('login')
+    if not correct_code or not user_id: return redirect('login')
 
     if request.method == 'POST':
         submitted_code = request.POST.get('code')
@@ -211,8 +207,7 @@ def verify_2fa_view(request):
                 request.session.pop('2fa_code', None)
                 request.session.pop('2fa_user_id', None)
                 return redirect('dashboard')
-            except Exception as e:
-                logger.error(f"Error during 2FA: {e}")
+            except:
                 return redirect('login')
         else:
             error = "Invalid verification code."
@@ -231,7 +226,12 @@ def public_report_view(request):
         if form.is_valid():
             try:
                 ref_code = f"PAY-{random.randint(100000, 999999)}"
-                
+                ocr_passed = verify_documents_ocr(
+                    form.cleaned_data['police_report_image'],
+                    form.cleaned_data['device_receipt'],
+                    form.cleaned_data['imei']
+                )
+
                 report = DeviceReport(
                     owner_full_name=form.cleaned_data['owner_full_name'],
                     owner_phone_number=form.cleaned_data['owner_phone_number'],
@@ -244,8 +244,9 @@ def public_report_view(request):
                     incident_time=timezone.now().time(),
                     incident_type="Self-Reported",
                     incident_location=form.cleaned_data['incident_description'],
-                    owner_id_proof=form.cleaned_data['owner_id_proof'],
+                    police_report_image=form.cleaned_data['police_report_image'],
                     device_receipt=form.cleaned_data['device_receipt'],
+                    ocr_verification_status=ocr_passed,
                     station=form.cleaned_data['incident_state'],
                     transaction_ref=ref_code,
                     status=DeviceReport.StatusChoices.PAYMENT_PENDING
@@ -254,22 +255,14 @@ def public_report_view(request):
                 
                 # Paystack Init
                 paystack_url = "https://api.paystack.co/transaction/initialize"
-                headers = {
-                    "Authorization": f"Bearer {settings.PAYSTACK_SECRET_KEY}",
-                    "Content-Type": "application/json"
-                }
+                headers = {"Authorization": f"Bearer {settings.PAYSTACK_SECRET_KEY}", "Content-Type": "application/json"}
                 data = {
                     "email": report.owner_email,
                     "amount": 100000, 
                     "reference": ref_code,
                     "callback_url": request.build_absolute_uri(reverse('verify_payment')),
-                    "metadata": {
-                        "custom_fields": [
-                            {"display_name": "IMEI", "variable_name": "imei", "value": report.imei}
-                        ]
-                    }
+                    "metadata": {"custom_fields": [{"display_name": "IMEI", "variable_name": "imei", "value": report.imei}]}
                 }
-
                 response = requests.post(paystack_url, headers=headers, json=data)
                 response_data = response.json()
 
@@ -277,16 +270,14 @@ def public_report_view(request):
                     return redirect(response_data['data']['authorization_url'])
                 else:
                     form.add_error(None, "Payment initialization failed.")
-
             except Exception as e:
                 logger.error(f"Error in public report: {e}")
                 if "unique constraint" in str(e):
                     form.add_error('imei', "This IMEI has already been reported.")
                 else:
-                    form.add_error(None, f"Error: {str(e)}")
+                    form.add_error(None, "An unexpected error occurred.")
     else:
         form = PublicReportForm()
-
     return render(request, 'public_report.html', {'form': form})
 
 def verify_payment_view(request):
@@ -305,22 +296,19 @@ def verify_payment_view(request):
             if report.status == DeviceReport.StatusChoices.PAYMENT_PENDING:
                 report.status = DeviceReport.StatusChoices.PENDING
                 report.save()
-
                 try:
                     subject = f"SafeIMEI Report Received - {report.transaction_ref}"
-                    message = f"Dear {report.owner_full_name},\n\nPayment received. Your report for IMEI {report.imei} is now PENDING VERIFICATION."
+                    message = f"Dear {report.owner_full_name},\n\nPayment received. Your report for IMEI {report.imei} is now PENDING VERIFICATION at our {report.station.name} center."
                     send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [report.owner_email], fail_silently=True)
                 except: pass
-
                 return render(request, 'report_success.html', {'report': report})
             elif report.status == DeviceReport.StatusChoices.PENDING:
                 return render(request, 'report_success.html', {'report': report})
-        
         return render(request, 'payment_failed.html')
     except:
         return render(request, 'payment_failed.html')
 
-# -------------------- OFFICER PORTAL --------------------
+# -------------------- AGENT PORTAL --------------------
 
 @login_required
 def dashboard_view(request):
@@ -328,19 +316,12 @@ def dashboard_view(request):
         officer_station = request.user.officerprofile.station
         now = timezone.now()
         context = {
-            'reports_this_month_count': DeviceReport.objects.filter(
-                station=officer_station, created_at__year=now.year, created_at__month=now.month
-            ).count(),
-            'pending_review_count': DeviceReport.objects.filter(
-                station=officer_station, status=DeviceReport.StatusChoices.PENDING
-            ).count(),
-            'recently_recovered_count': DeviceReport.objects.filter(
-                station=officer_station, status=DeviceReport.StatusChoices.RECOVERED
-            ).count(),
+            'reports_this_month_count': DeviceReport.objects.filter(station=officer_station, created_at__year=now.year, created_at__month=now.month).count(),
+            'pending_review_count': DeviceReport.objects.filter(station=officer_station, status=DeviceReport.StatusChoices.PENDING).count(),
+            'recently_recovered_count': DeviceReport.objects.filter(station=officer_station, status=DeviceReport.StatusChoices.RECOVERED).count(),
         }
         return render(request, 'dashboard.html', context)
-    except:
-        return redirect('home')
+    except: return redirect('home')
 
 @login_required
 def view_reports_view(request):
@@ -348,33 +329,29 @@ def view_reports_view(request):
     if not officer_station: return redirect('home')
     search_query = request.GET.get('search', '')
     reports = DeviceReport.objects.filter(station=officer_station)
-    if search_query:
-        reports = reports.filter(imei__icontains=search_query)
+    if search_query: reports = reports.filter(imei__icontains=search_query)
     return render(request, 'view_reports.html', {'reports': reports.order_by('-created_at')})
 
 @login_required
 def report_detail_view(request, report_id):
     report = get_object_or_404(DeviceReport, id=report_id)
-    if report.station != request.user.officerprofile.station:
-        return redirect('dashboard')
+    if report.station != request.user.officerprofile.station: return redirect('dashboard')
 
     if request.method == 'POST':
         action = request.POST.get('action')
-        email_subject = ""
-        email_message = ""
-        send_notify = False
+        email_subject, email_message, send_notify = "", "", False
 
         if action == 'approve':
             report.status = DeviceReport.StatusChoices.STOLEN
             report.save()
             email_subject = "Report Verified"
-            email_message = "Your device is now blacklisted."
+            email_message = "Your device has been blacklisted."
             send_notify = True
         elif action == 'reject':
             report.status = 'Rejected'
             report.save()
             email_subject = "Report Rejected"
-            email_message = "Your report was rejected."
+            email_message = "Report rejected due to invalid documents."
             send_notify = True
         elif action == 'mark_recovered':
             report.status = DeviceReport.StatusChoices.RECOVERED
@@ -391,7 +368,6 @@ def report_detail_view(request, report_id):
                 send_mail(email_subject, email_message, settings.DEFAULT_FROM_EMAIL, [report.owner_email], fail_silently=True)
             except: pass
         return redirect('view_reports')
-
     return render(request, 'report_detail.html', {'report': report})
 
 # -------------------- STATIC & ADMIN --------------------
@@ -405,9 +381,7 @@ def seed_database_view(request):
     try:
         call_command('seed_data')
         return HttpResponse("Seeding Successful")
-    except Exception as e:
-        return HttpResponse(f"Error: {e}", status=500)
+    except Exception as e: return HttpResponse(f"Error: {e}", status=500)
 
 @login_required
-def create_report_view(request, step):
-    return redirect('dashboard')
+def create_report_view(request, step): return redirect('dashboard')

@@ -9,8 +9,8 @@ from .models import Station, OfficerProfile, DeviceReport
 @admin.register(Station)
 class StationAdmin(admin.ModelAdmin):
     """
-    Admin view for Stations.
-    Allows adding police stations with their names and locations.
+    Admin view for Verification Centers (formerly Stations).
+    Allows adding agencies/centers with their names and locations.
     """
     list_display = ('name', 'location')
     search_fields = ('name', 'location')
@@ -43,8 +43,8 @@ class StationAdmin(admin.ModelAdmin):
 @admin.register(OfficerProfile)
 class OfficerProfileAdmin(admin.ModelAdmin):
     """
-    Admin view for Officer Profiles.
-    Links a User to a Station for accountability.
+    Admin view for Agent Profiles.
+    Links a User to a Verification Center for accountability.
     """
     list_display = ('user', 'station', 'get_user_email')
     search_fields = ('user__username', 'station__name')
@@ -52,7 +52,7 @@ class OfficerProfileAdmin(admin.ModelAdmin):
 
     @admin.display(description='Email')
     def get_user_email(self, obj):
-        """Return officer's email directly from related User model."""
+        """Return agent's email directly from related User model."""
         return obj.user.email
 
 
@@ -60,7 +60,7 @@ class OfficerProfileAdmin(admin.ModelAdmin):
 class DeviceReportAdmin(admin.ModelAdmin):
     """
     Admin view for Device Theft Reports.
-    Displays device details, incident info, and reporting station.
+    Displays device details, incident info, and reporting agency.
     """
     list_display = ('imei', 'brand', 'model', 'status', 'station', 'created_at')
     list_filter = ('status', 'station', 'brand', 'created_at')

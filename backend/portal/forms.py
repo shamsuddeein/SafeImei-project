@@ -1,4 +1,4 @@
-# portal/forms.py
+# backend/portal/forms.py
 
 from django import forms
 from .models import DeviceReport, Station
@@ -108,12 +108,13 @@ class ReportStep3Form(StyledForm):
 
 
 # Step 4: Final Step (Proofs, Confirmation, and Submission)
+# UPDATED to match new requirements
 class ReportStep4Form(StyledForm):
-    owner_id_proof = forms.FileField(
-        label="Owner's Passport / ID",
+    police_report_image = forms.FileField(
+        label="Police Report / Extract",
         required=True,
         validators=[validators.validate_file_size, validators.validate_file_type],
-        error_messages={"required": "ID proof is required."}
+        error_messages={"required": "Police report is required."}
     )
     device_carton_photo = forms.FileField(
         label="Device Carton / Box Photo",
@@ -141,7 +142,7 @@ class ReportStep4Form(StyledForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Special styling for file inputs
-        file_fields = ['owner_id_proof', 'device_carton_photo', 'device_receipt']
+        file_fields = ['police_report_image', 'device_carton_photo', 'device_receipt']
         for field_name in file_fields:
             if field_name in self.fields:
                 self.fields[field_name].widget.attrs.update({
@@ -173,9 +174,9 @@ class PublicReportForm(StyledForm):
     # Incident Info
     incident_state = forms.ModelChoiceField(
         queryset=Station.objects.all(),
-        label="Select Nearest State Command",
-        empty_label="Choose State...",
-        help_text="Your report will be verified by officers in this command."
+        label="Select Verification Center",  # CHANGED from State Command
+        empty_label="Choose Location...",
+        help_text="Your report will be processed by agents at this center."
     )
     incident_date = forms.DateField(
         widget=forms.DateInput(attrs={'type': 'date'}), 
@@ -188,10 +189,11 @@ class PublicReportForm(StyledForm):
     )
 
     # Proofs (Mandatory for Public)
-    owner_id_proof = forms.FileField(
-        label="Upload Valid ID (NIN, PVC, DL, or Passport)",
+    # RENAMED FIELD: owner_id_proof -> police_report_image
+    police_report_image = forms.FileField(
+        label="Upload Police Report / Extract",
         validators=[validators.validate_file_size, validators.validate_file_type],
-        help_text="Clear image of your ID."
+        help_text="Upload the official police extract or incident report."
     )
     device_receipt = forms.FileField(
         label="Upload Proof of Ownership (Receipt or Box)",
@@ -200,14 +202,14 @@ class PublicReportForm(StyledForm):
     )
 
     terms = forms.BooleanField(
-        label="I certify that I am the owner of this device. I understand that filing a false police report is a criminal offense punishable by law.",
+        label="I certify that I have reported this to the police and the details provided are true.",
         required=True
     )
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Apply file styling
-        file_fields = ['owner_id_proof', 'device_receipt']
+        file_fields = ['police_report_image', 'device_receipt']
         for field_name in file_fields:
             if field_name in self.fields:
                 self.fields[field_name].widget.attrs.update({
